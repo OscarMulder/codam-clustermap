@@ -1,0 +1,104 @@
+:root {
+    /* Defining variables */
+    --background-color: #121212;
+    --foreground-color: #fafafa;
+    --accent-color: #d644d1;
+    --active-color: rgba(48, 205, 49, 0.76);
+    --popover-border: rgba(255, 255, 255, 0.2);
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        /* Redefining color variables for dark theme */
+        --background-color: #fafafa;
+        --foreground-color: #121212;
+        --accent-color: #d644d1;
+        --active-color: rgba(48, 205, 49, 0.76);
+        --popover-border: rgba(0,0,0,.2);
+    }
+}
+
+body {
+    background: var(--background-color)!important;
+    color: var(--foreground-color)!important;
+}
+
+.mapcontainer-col {
+    display: grid;
+    grid-template-columns: 1fr, 1fr;
+    grid-template-areas: "a b";
+}
+
+.mapcontainer-row {
+    display: grid;
+    grid-template-rows: 1fr, 1fr;
+    grid-template-areas: 
+    "a"
+    "b";
+}
+
+.mapf0 {
+    grid-area: a;
+    justify-self: center;
+}
+
+.mapf1 {
+    grid-area: b;
+    justify-self: center;
+}
+
+.imac-location {
+    display: block;
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.imac-location button {
+    margin: 0;
+    padding: 0;
+    background: rgba(0, 0, 0, 0);
+    border: 0px;
+}
+
+.round-img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin: 2px;
+    object-fit: cover;
+    object-position: center;
+    background: rgba(0, 0, 0, 0);
+    border: 3px solid var(--active-color);
+}
+
+.empty-host {
+	fill: var(--accent-color);
+	color: var(--accent-color);
+}
+
+.popover {
+    width: 120px!important;
+    text-align: center;
+    background: var(--background-color)!important;
+    border: 1px solid var(--popover-border)!important;
+}
+
+.popover-header {
+    font-weight: bold;
+    width: 100%;
+    text-align: center;
+    background: var(--background-color)!important;
+    color: var(--foreground-color)!important;
+}
+
+.popover-body {
+    font-weight: bold;
+    width: 100%;
+    text-align: center;
+    background: var(--background-color)!important;
+    color: var(--foreground-color)!important;
+}
+
+.popover-trigger {
+    outline: none;
+}

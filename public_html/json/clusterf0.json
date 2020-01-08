@@ -1,0 +1,611 @@
+{
+  "mapsettings": {
+    "heigth": 1325,
+    "width": 1026,
+    "active-size": 60,
+    "empty-size": 20
+  },
+  "hosts":
+  [
+    {
+      "hostname": "f0r1s1.codam.nl",
+      "left": 947,
+      "top": 1241
+    },
+    {
+      "hostname": "f0r1s10.codam.nl",
+      "left": 923,
+      "top": 621
+    },
+    {
+      "hostname": "f0r1s11.codam.nl",
+      "left": 913,
+      "top": 561
+    },
+    {
+      "hostname": "f0r1s12.codam.nl",
+      "left": 979,
+      "top": 520
+    },
+    {
+      "hostname": "f0r1s13.codam.nl",
+      "left": 947,
+      "top": 322
+    },
+    {
+      "hostname": "f0r1s14.codam.nl",
+      "left": 948,
+      "top": 243
+    },
+    {
+      "hostname": "f0r1s15.codam.nl",
+      "left": 888,
+      "top": 221
+    },
+    {
+      "hostname": "f0r1s2.codam.nl",
+      "left": 948,
+      "top": 1161
+    },
+    {
+      "hostname": "f0r1s3.codam.nl",
+      "left": 888,
+      "top": 1141
+    },
+    {
+      "hostname": "f0r1s4.codam.nl",
+      "left": 924,
+      "top": 1080
+    },
+    {
+      "hostname": "f0r1s5.codam.nl",
+      "left": 911,
+      "top": 1019
+    },
+    {
+      "hostname": "f0r1s6.codam.nl",
+      "left": 982,
+      "top": 980
+    },
+    {
+      "hostname": "f0r1s7.codam.nl",
+      "left": 945,
+      "top": 781
+    },
+    {
+      "hostname": "f0r1s8.codam.nl",
+      "left": 944,
+      "top": 701
+    },
+    {
+      "hostname": "f0r1s9.codam.nl",
+      "left": 888,
+      "top": 681
+    },
+    {
+      "hostname": "f0r2s1.codam.nl",
+      "left": 842,
+      "top": 1221
+    },
+    {
+      "hostname": "f0r2s10.codam.nl",
+      "left": 773,
+      "top": 720
+    },
+    {
+      "hostname": "f0r2s11.codam.nl",
+      "left": 785,
+      "top": 661
+    },
+    {
+      "hostname": "f0r2s12.codam.nl",
+      "left": 751,
+      "top": 601
+    },
+    {
+      "hostname": "f0r2s13.codam.nl",
+      "left": 807,
+      "top": 579
+    },
+    {
+      "hostname": "f0r2s14.codam.nl",
+      "left": 809,
+      "top": 499
+    },
+    {
+      "hostname": "f0r2s15.codam.nl",
+      "left": 865,
+      "top": 480
+    },
+    {
+      "hostname": "f0r2s16.codam.nl",
+      "left": 832,
+      "top": 363
+    },
+    {
+      "hostname": "f0r2s17.codam.nl",
+      "left": 843,
+      "top": 303
+    },
+    {
+      "hostname": "f0r2s18.codam.nl",
+      "left": 772,
+      "top": 262
+    },
+    {
+      "hostname": "f0r2s19.codam.nl",
+      "left": 783,
+      "top": 203
+    },
+    {
+      "hostname": "f0r2s2.codam.nl",
+      "left": 774,
+      "top": 1181
+    },
+    {
+      "hostname": "f0r2s3.codam.nl",
+      "left": 785,
+      "top": 1121
+    },
+    {
+      "hostname": "f0r2s4.codam.nl",
+      "left": 749,
+      "top": 1060
+    },
+    {
+      "hostname": "f0r2s5.codam.nl",
+      "left": 807,
+      "top": 1038
+    },
+    {
+      "hostname": "f0r2s6.codam.nl",
+      "left": 806,
+      "top": 960
+    },
+    {
+      "hostname": "f0r2s7.codam.nl",
+      "left": 867,
+      "top": 940
+    },
+    {
+      "hostname": "f0r2s8.codam.nl",
+      "left": 831,
+      "top": 821
+    },
+    {
+      "hostname": "f0r2s9.codam.nl",
+      "left": 843,
+      "top": 763
+    },
+    {
+      "hostname": "f0r3s1.codam.nl",
+      "left": 674,
+      "top": 1239
+    },
+    {
+      "hostname": "f0r3s10.codam.nl",
+      "left": 675,
+      "top": 700
+    },
+    {
+      "hostname": "f0r3s11.codam.nl",
+      "left": 616,
+      "top": 680
+    },
+    {
+      "hostname": "f0r3s12.codam.nl",
+      "left": 652,
+      "top": 621
+    },
+    {
+      "hostname": "f0r3s13.codam.nl",
+      "left": 640,
+      "top": 561
+    },
+    {
+      "hostname": "f0r3s14.codam.nl",
+      "left": 708,
+      "top": 521
+    },
+    {
+      "hostname": "f0r3s15.codam.nl",
+      "left": 697,
+      "top": 459
+    },
+    {
+      "hostname": "f0r3s16.codam.nl",
+      "left": 733,
+      "top": 342
+    },
+    {
+      "hostname": "f0r3s17.codam.nl",
+      "left": 675,
+      "top": 322
+    },
+    {
+      "hostname": "f0r3s18.codam.nl",
+      "left": 674,
+      "top": 243
+    },
+    {
+      "hostname": "f0r3s19.codam.nl",
+      "left": 615,
+      "top": 222
+    },
+    {
+      "hostname": "f0r3s2.codam.nl",
+      "left": 674,
+      "top": 1161
+    },
+    {
+      "hostname": "f0r3s20.codam.nl",
+      "left": 649,
+      "top": 160
+    },
+    {
+      "hostname": "f0r3s21.codam.nl",
+      "left": 639,
+      "top": 100
+    },
+    {
+      "hostname": "f0r3s22.codam.nl",
+      "left": 759,
+      "top": 61
+    },
+    {
+      "hostname": "f0r3s23.codam.nl",
+      "left": 806,
+      "top": 101
+    },
+    {
+      "hostname": "f0r3s24.codam.nl",
+      "left": 876,
+      "top": 60
+    },
+    {
+      "hostname": "f0r3s25.codam.nl",
+      "left": 921,
+      "top": 100
+    },
+    {
+      "hostname": "f0r3s26.codam.nl",
+      "left": 991,
+      "top": 62
+    },
+    {
+      "hostname": "f0r3s3.codam.nl",
+      "left": 615,
+      "top": 1141
+    },
+    {
+      "hostname": "f0r3s4.codam.nl",
+      "left": 650,
+      "top": 1080
+    },
+    {
+      "hostname": "f0r3s5.codam.nl",
+      "left": 639,
+      "top": 1019
+    },
+    {
+      "hostname": "f0r3s6.codam.nl",
+      "left": 709,
+      "top": 979
+    },
+    {
+      "hostname": "f0r3s7.codam.nl",
+      "left": 696,
+      "top": 919
+    },
+    {
+      "hostname": "f0r3s8.codam.nl",
+      "left": 732,
+      "top": 802
+    },
+    {
+      "hostname": "f0r3s9.codam.nl",
+      "left": 675,
+      "top": 782
+    },
+    {
+      "hostname": "f0r4s1.codam.nl",
+      "left": 351,
+      "top": 1239
+    },
+    {
+      "hostname": "f0r4s10.codam.nl",
+      "left": 353,
+      "top": 701
+    },
+    {
+      "hostname": "f0r4s9.codam.nl",
+      "left": 351,
+      "top": 781
+    },
+    {
+      "hostname": "f0r4s11.codam.nl",
+      "left": 409,
+      "top": 680
+    },
+    {
+      "hostname": "f0r4s12.codam.nl",
+      "left": 375,
+      "top": 621
+    },
+    {
+      "hostname": "f0r4s13.codam.nl",
+      "left": 386,
+      "top": 560
+    },
+    {
+      "hostname": "f0r4s14.codam.nl",
+      "left": 317,
+      "top": 519
+    },
+    {
+      "hostname": "f0r4s15.codam.nl",
+      "left": 328,
+      "top": 460
+    },
+    {
+      "hostname": "f0r4s16.codam.nl",
+      "left": 294,
+      "top": 342
+    },
+    {
+      "hostname": "f0r4s17.codam.nl",
+      "left": 352,
+      "top": 323
+    },
+    {
+      "hostname": "f0r4s18.codam.nl",
+      "left": 352,
+      "top": 241
+    },
+    {
+      "hostname": "f0r4s19.codam.nl",
+      "left": 409,
+      "top": 222
+    },
+    {
+      "hostname": "f0r4s2.codam.nl",
+      "left": 351,
+      "top": 1160
+    },
+    {
+      "hostname": "f0r4s20.codam.nl",
+      "left": 373,
+      "top": 161
+    },
+    {
+      "hostname": "f0r4s21.codam.nl",
+      "left": 386,
+      "top": 101
+    },
+    {
+      "hostname": "f0r4s22.codam.nl",
+      "left": 268,
+      "top": 61
+    },
+    {
+      "hostname": "f0r4s23.codam.nl",
+      "left": 221,
+      "top": 101
+    },
+    {
+      "hostname": "f0r4s24.codam.nl",
+      "left": 151,
+      "top": 60
+    },
+    {
+      "hostname": "f0r4s25.codam.nl",
+      "left": 104,
+      "top": 100
+    },
+    {
+      "hostname": "f0r4s26.codam.nl",
+      "left": 34,
+      "top": 62
+    },
+    {
+      "hostname": "f0r4s3.codam.nl",
+      "left": 409,
+      "top": 1139
+    },
+    {
+      "hostname": "f0r4s4.codam.nl",
+      "left": 376,
+      "top": 1079
+    },
+    {
+      "hostname": "f0r4s5.codam.nl",
+      "left": 386,
+      "top": 1020
+    },
+    {
+      "hostname": "f0r4s6.codam.nl",
+      "left": 317,
+      "top": 980
+    },
+    {
+      "hostname": "f0r4s7.codam.nl",
+      "left": 327,
+      "top": 918
+    },
+    {
+      "hostname": "f0r4s8.codam.nl",
+      "left": 293,
+      "top": 801
+    },
+    {
+      "hostname": "f0r6s3.codam.nl",
+      "left": 138,
+      "top": 1140
+    },
+    {
+      "hostname": "f0r5s1.codam.nl",
+      "left": 183,
+      "top": 1220
+    },
+    {
+      "hostname": "f0r5s10.codam.nl",
+      "left": 253,
+      "top": 721
+    },
+    {
+      "hostname": "f0r5s11.codam.nl",
+      "left": 242,
+      "top": 662
+    },
+    {
+      "hostname": "f0r5s12.codam.nl",
+      "left": 276,
+      "top": 600
+    },
+    {
+      "hostname": "f0r5s13.codam.nl",
+      "left": 219,
+      "top": 580
+    },
+    {
+      "hostname": "f0r5s14.codam.nl",
+      "left": 218,
+      "top": 500
+    },
+    {
+      "hostname": "f0r5s15.codam.nl",
+      "left": 159,
+      "top": 480
+    },
+    {
+      "hostname": "f0r5s16.codam.nl",
+      "left": 195,
+      "top": 363
+    },
+    {
+      "hostname": "f0r5s17.codam.nl",
+      "left": 183,
+      "top": 302
+    },
+    {
+      "hostname": "f0r5s18.codam.nl",
+      "left": 253,
+      "top": 261
+    },
+    {
+      "hostname": "f0r5s19.codam.nl",
+      "left": 243,
+      "top": 201
+    },
+    {
+      "hostname": "f0r5s2.codam.nl",
+      "left": 252,
+      "top": 1180
+    },
+    {
+      "hostname": "f0r5s3.codam.nl",
+      "left": 243,
+      "top": 1122
+    },
+    {
+      "hostname": "f0r5s4.codam.nl",
+      "left": 278,
+      "top": 1059
+    },
+    {
+      "hostname": "f0r5s5.codam.nl",
+      "left": 218,
+      "top": 1039
+    },
+    {
+      "hostname": "f0r5s6.codam.nl",
+      "left": 218,
+      "top": 959
+    },
+    {
+      "hostname": "f0r5s7.codam.nl",
+      "left": 161,
+      "top": 940
+    },
+    {
+      "hostname": "f0r5s8.codam.nl",
+      "left": 194,
+      "top": 822
+    },
+    {
+      "hostname": "f0r5s9.codam.nl",
+      "left": 182,
+      "top": 760
+    },
+    {
+      "hostname": "f0r6s1.codam.nl",
+      "left": 79,
+      "top": 1243
+    },
+    {
+      "hostname": "f0r6s10.codam.nl",
+      "left": 102,
+      "top": 621
+    },
+    {
+      "hostname": "f0r6s11.codam.nl",
+      "left": 116,
+      "top": 561
+    },
+    {
+      "hostname": "f0r6s12.codam.nl",
+      "left": 45,
+      "top": 520
+    },
+    {
+      "hostname": "f0r6s13.codam.nl",
+      "left": 79,
+      "top": 323
+    },
+    {
+      "hostname": "f0r6s14.codam.nl",
+      "left": 78,
+      "top": 242
+    },
+    {
+      "hostname": "f0r6s15.codam.nl",
+      "left": 137,
+      "top": 222
+    },
+    {
+      "hostname": "f0r6s2.codam.nl",
+      "left": 80,
+      "top": 1161
+    },
+    {
+      "hostname": "f0r6s4.codam.nl",
+      "left": 103,
+      "top": 1079
+    },
+    {
+      "hostname": "f0r6s5.codam.nl",
+      "left": 114,
+      "top": 1019
+    },
+    {
+      "hostname": "f0r6s6.codam.nl",
+      "left": 44,
+      "top": 979
+    },
+    {
+      "hostname": "f0r6s7.codam.nl",
+      "left": 81,
+      "top": 780
+    },
+    {
+      "hostname": "f0r6s8.codam.nl",
+      "left": 79,
+      "top": 703
+    },
+    {
+      "hostname": "f0r6s9.codam.nl",
+      "left": 138,
+      "top": 681
+    }
+  ]
+}
