@@ -2,15 +2,39 @@
 	<head>
 		<title>Codam Clustermaps</title>
     <link rel="stylesheet" href="css/clustermap.css">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="icon" type="image/png" sizes="64x64" href="img/favicon-codam.png">
   </head>
   <body>
     <main></main>
     <script src="js/interactive_maps.js"></script>
     <script>
+
+      /* 
+       * This function gets the viewport size in a more reliable way (especially for firefox)
+       */
+      function viewportSize(){
+        var test = document.createElement( "div" );
+
+        test.style.cssText = "position: fixed;top: 0;left: 0;bottom: 0;right: 0;";
+        document.documentElement.insertBefore( test, document.documentElement.firstChild );
+        
+        var dims = { width: test.offsetWidth, height: test.offsetHeight };
+        document.documentElement.removeChild( test );
+        
+        return dims;
+      }
+    
+      var isFirefox = typeof InstallTrigger !== 'undefined';
+      var viewinfo = viewportSize();
+      viewinfo.isFirefox = isFirefox;
+
+      /*
+       * Viewinfo now contains width, height and isFirefox. Elm will use these to display the correct mapsize.
+       */
       var app = Elm.Main.init({ 
         node: document.querySelector('main'),
-        flags: { width: window.outerWidth, height: window.outerHeight }
+        flags: viewinfo
       })
     </script>
   </body>

@@ -1,5 +1,10 @@
 module Clustermap exposing (MapSettings, Model, Msg(..), init, update, view, viewUsedImacs)
 
+{-| This Clustermap module makes it possible to display multiple clustermaps
+without a lot of duplicate code. It is setup in such a way that it will work
+with any map and any amount of computers.
+-}
+
 import Asset exposing (Image)
 import Bootstrap.Button as Button
 import Bootstrap.Popover as Popover
@@ -18,33 +23,46 @@ import Time
 
 -- MODEL
 
-
+{-| Tracks the state of a session request.
+-}
 type SessionRequest
     = Failure Http.Error
     | Loading
     | Success (List Session)
 
 
+{-| Tracks the state of a host request.
+-}
 type HostRequest
     = HostFailure Http.Error
     | HostLoading
     | HostSuccess HostModel
 
 
+{-| Contains the settings used to render the map.
+These are passed to the init function.
+The sizes are all in pixels.
+-}
 type alias MapSettings =
     { height : Int
     , width : Int
-    , activeSize : Int
-    , emptySize : Int
+    , activeIconSize : Int
+    , emptyIconSize : Int
     }
 
 
+{-| Holds the mapSettings loaded from the host json and the list of hosts. The
+mapSettings width and height are needed to recalculate the icon positions if the
+map size changes. The IconSize values are not used.
+-}
 type alias HostModel =
     { mapSettings : MapSettings
     , hostList : List Host
     }
 
 
+{-| Defines one host. Position is used as ( left, top ) in pixels.
+-}
 type alias Host =
     { id : String
     , position : ( Int, Int )
@@ -52,6 +70,10 @@ type alias Host =
     }
 
 
+{-| Defines an active session. The host field should match one of the host id's
+in the hostList. If it doesn't the session is not displayed. The username is
+used in the display and to find the profile picture.
+-}
 type alias Session =
     { username : String
     , host : String
@@ -162,6 +184,12 @@ update msg model =
 -- VIEW
 
 
+{-| The view is rendered based on if the http request for hosts and sessions
+succeed. If they don't the view can sometimes be rendered using "old" data. In
+that case a warning is displayed. The case where the hostrequest fails but we
+still have a hostmodel shouldn't happen because the hostrequest is done only
+once. It is still handled just to be sure.
+-}
 view : Model -> Html Msg
 view model =
     case model.reqH of
@@ -204,6 +232,8 @@ view model =
                     viewMap model sessionlist hostmodel
 
 
+{-| Renders the map and all the icons.
+-}
 viewMap : Model -> List Session -> HostModel -> Html Msg
 viewMap model sessionlist hostmodel =
     Keyed.node "div"
@@ -217,22 +247,30 @@ viewMap model sessionlist hostmodel =
             ]
             []
          )
-            :: viewSessions model sessionlist hostmodel
+            :: viewIcons model sessionlist hostmodel
         )
 
 
-viewSessions : Model -> List Session -> HostModel -> List ( String, Html Msg )
-viewSessions model sessionlist hostmodel =
-    List.map (viewKeyedSession model sessionlist hostmodel.mapSettings) hostmodel.hostList
+{-| Renders the list of icons with their correct positions which will be
+displayed on the map.
+-}
+viewIcons : Model -> List Session -> HostModel -> List ( String, Html Msg )
+viewIcons model sessionlist hostmodel =
+    List.map (viewKeyedIcon model sessionlist hostmodel.mapSettings) hostmodel.hostList
 
 
-viewKeyedSession : Model -> List Session -> MapSettings -> Host -> ( String, Html Msg )
-viewKeyedSession model sessionlist hostmapsettings host =
-    ( host.id, viewSession model sessionlist hostmapsettings host )
+{-| Keys the icon for faster dom rendering.
+-}
+viewKeyedIcon : Model -> List Session -> MapSettings -> Host -> ( String, Html Msg )
+viewKeyedIcon model sessionlist hostmapsettings host =
+    ( host.id, viewIcon model sessionlist hostmapsettings host )
 
 
-viewSession : Model -> List Session -> MapSettings -> Host -> Html Msg
-viewSession model sessionlist hostmapsettings host =
+{-| Renders the icon and gives it correct position values. Can be either an
+empty host icon or an active session icon.
+-}
+viewIcon : Model -> List Session -> MapSettings -> Host -> Html Msg
+viewIcon model sessionlist hostmapsettings host =
     let
         maybeSession =
             List.head (List.filter (hostFilter host.id) sessionlist)
@@ -241,22 +279,29 @@ viewSession model sessionlist hostmapsettings host =
         offset =
             case maybeSession of
                 Nothing ->
-                    model.mapSettings.emptySize // 2
+                    model.mapSettings.emptyIconSize // 2
 
                 Just _ ->
-                    model.mapSettings.activeSize // 2
+                    model.mapSettings.activeIconSize // 2
     in
     div
         [ class "imac-location"
-        , style "left" <| String.fromInt ((calculateLeft model hostmapsettings <| Tuple.first host.position) - offset) ++ "px"
-        , style "top" <| String.fromInt ((calculateTop model hostmapsettings <| Tuple.second host.position) - offset) ++ "px"
+        , style "left"
+            <| String.fromInt ((calculateLeft model hostmapsettings
+            <| Tuple.first host.position) - offset) ++ "px"
+        , style "top"
+            <| String.fromInt ((calculateTop model hostmapsettings
+            <| Tuple.second host.position) - offset) ++ "px"
         ]
         (case maybeSession of
             Nothing ->
                 [ Popover.config
                     (Button.button
-                        [ Button.attrs <| id (hostToId host.id) :: Popover.onHover host.popState (PopoverMsg host.id) ]
-                        [ Asset.emptyHost model.mapSettings.emptySize ]
+                        [ Button.attrs
+                            <| id (hostToId host.id)
+                            :: Popover.onHover host.popState (PopoverMsg host.id)
+                        ]
+                        [ Asset.emptyHost model.mapSettings.emptyIconSize ]
                     )
                     |> Popover.top
                     |> Popover.content [] [ text (hostToId host.id) ]
@@ -266,13 +311,18 @@ viewSession model sessionlist hostmapsettings host =
             Just session ->
                 [ Popover.config
                     (Button.button
-                        [ Button.attrs <| id (hostToId host.id) :: Popover.onHover host.popState (PopoverMsg host.id) ]
+                        [ Button.attrs
+                            <| id (hostToId host.id)
+                            :: Popover.onHover host.popState (PopoverMsg host.id)
+                        ]
                         [ a [ href ("https://profile.intra.42.fr/users/" ++ session.username), target "_blank" ]
                             [ img
                                 [ src ("https://cdn.intra.42.fr/users/small_" ++ session.username ++ ".jpg")
                                 , class "round-img"
-                                , style "width" <| String.fromInt model.mapSettings.activeSize
-                                , style "height" <| String.fromInt model.mapSettings.activeSize
+                                , style "width"
+                                    <| String.fromInt model.mapSettings.activeIconSize
+                                , style "height"
+                                    <| String.fromInt model.mapSettings.activeIconSize
                                 ]
                                 []
                             ]
@@ -286,6 +336,9 @@ viewSession model sessionlist hostmapsettings host =
         )
 
 
+{-| Renders a text element containing the amount of used imacs and total imacs
+in "42/120" format.
+-}
 viewUsedImacs : Model -> Html Msg
 viewUsedImacs model =
     let
@@ -299,10 +352,13 @@ viewUsedImacs model =
     in
     let
         totalImacs =
-            String.fromInt <| List.length hlist
+            String.fromInt
+                <| List.length hlist
 
         usedImacs =
-            String.fromInt <| List.length <| List.filter (hostListFilter hlist) model.activeList
+            String.fromInt
+                <| List.length
+                <| List.filter (hostListFilter hlist) model.activeList
     in
     text (usedImacs ++ "/" ++ totalImacs)
 
@@ -311,14 +367,22 @@ viewUsedImacs model =
 -- HOST HELPERS
 
 
+{-| Recalculates the left position value using the base map size (from the
+hostModel) and the actual mapsize.
+-}
 calculateLeft : Model -> MapSettings -> Int -> Int
 calculateLeft model hostmapsettings left =
-    round <| (toFloat left / toFloat hostmapsettings.width) * toFloat model.mapSettings.width
+    round
+        <| (toFloat left / toFloat hostmapsettings.width) * toFloat model.mapSettings.width
 
 
+{-| Recalculates the top position value using the base map size (from the
+hostModel) and the actual mapsize.
+-}
 calculateTop : Model -> MapSettings -> Int -> Int
 calculateTop model hostmapsettings top =
-    round <| (toFloat top / toFloat hostmapsettings.height) * toFloat model.mapSettings.height
+    round
+        <| (toFloat top / toFloat hostmapsettings.height) * toFloat model.mapSettings.height
 
 
 hostListFilter : List Host -> Session -> Bool
@@ -402,7 +466,7 @@ hostModelDecoder : Decoder HostModel
 hostModelDecoder =
     Field.require "mapsettings" mapSettingsDecoder <|
         \mapsettings ->
-            Field.require "hosts" hostListFromFileDecoder <|
+            Field.require "hosts" hostListDecoder <|
                 \hostlist ->
                     Decode.succeed
                         { mapSettings = mapsettings
@@ -417,24 +481,24 @@ mapSettingsDecoder =
             Field.require "width" Decode.int <|
                 \width ->
                     Field.require "active-size" Decode.int <|
-                        \activesize ->
+                        \activeIconSize ->
                             Field.require "empty-size" Decode.int <|
-                                \emptysize ->
+                                \emptyIconSize ->
                                     Decode.succeed
                                         { height = height
                                         , width = width
-                                        , activeSize = activesize
-                                        , emptySize = emptysize
+                                        , activeIconSize = activeIconSize
+                                        , emptyIconSize = emptyIconSize
                                         }
 
 
-hostListFromFileDecoder : Decoder (List Host)
-hostListFromFileDecoder =
-    Decode.list hostFromFileDecoder
+hostListDecoder : Decoder (List Host)
+hostListDecoder =
+    Decode.list hostDecoder
 
 
-hostFromFileDecoder : Decoder Host
-hostFromFileDecoder =
+hostDecoder : Decoder Host
+hostDecoder =
     Field.require "hostname" Decode.string <|
         \hostname ->
             Field.require "left" Decode.int <|

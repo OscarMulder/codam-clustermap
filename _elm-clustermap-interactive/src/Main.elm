@@ -17,8 +17,12 @@ import Time
 
 -- MAIN
 
-
-main : Program { height : Int, width : Int } Model Msg
+{-| The record { height : Int, width : Int, isFirefox : Bool } contains values
+passed in by javascript (flags). This is done to get an accurate initial
+viewport height and width as a base for the map sizes. They will be used in the
+init function. isFirefox is needed for responsiveness (see init function).
+-}
+main : Program { height : Int, width : Int, isFirefox : Bool }  Model Msg
 main =
     Browser.element
         { init = init
@@ -42,18 +46,35 @@ type alias Model =
     { clusterF0 : Clustermap.Model
     , clusterF1 : Clustermap.Model
     , windowInfo : Window
-    , deviceInfo : Maybe Device
+    , deviceInfo : Device
     }
 
 
-init : { width : Int, height : Int } -> ( Model, Cmd Msg )
-init { width, height } =
+{-| 
+On initial loading we use the values passed from the flags to determine a map
+size. I found that taking 90% of the width and hight values gives better
+results. 
+
+Firefox loads nicely with the width and hight from the flags, but chrome
+doesn't. Also, performing getViewport in Firefox before the map is fully loaded
+gives strange results. It only seems to work fine when triggered from the
+onResize event. So the getViewport task isn't performed when the browser is
+Firefox, but is for all other browsers (I only tested Chrome and Firefox).
+-}
+init : { width : Int, height : Int, isFirefox : Bool } -> ( Model, Cmd Msg )
+init { width, height, isFirefox } =
     let
+        width90 =
+            round (toFloat width * 0.9)
+        
+        height90 =
+            round (toFloat height * 0.9)
+
         device =
-            classifyDevice { height = round (toFloat height * 0.9), width = round (toFloat width * 0.9) }
+            classifyDevice { height = height90, width = width90}
 
         mapsettings =
-            calcMapSettings { height = round (toFloat height * 0.9), width = round (toFloat width * 0.9) } device
+            calcMapSettings { height = height90, width = width90 } device
 
         ( f0model, f0cmd ) =
             Clustermap.init Endpoint.clusterf0 Endpoint.activeSessions Asset.clusterf0 mapsettings
@@ -61,15 +82,18 @@ init { width, height } =
         ( f1model, f1cmd ) =
             Clustermap.init Endpoint.clusterf1 Endpoint.activeSessions Asset.clusterf1 mapsettings
         
-        -- Calling BeResponsive before the whole view is loaded
         resizeTask =
-            if device.class == Phone then
-                Task.perform BeResponsive BD.getViewport
-            else
+            if isFirefox then
                 Cmd.none
+            else
+                Task.perform BeResponsive BD.getViewport
     in
-    ( Model f0model f1model (Window (round (toFloat width * 0.9)) (round (toFloat height * 0.9))) <| Just device
-    , Platform.Cmd.batch [ Platform.Cmd.map Mapf0Msg f0cmd, Platform.Cmd.map Mapf1Msg f1cmd, resizeTask ]
+    ( Model f0model f1model (Window width90 height90) device
+    , Platform.Cmd.batch 
+        [ Platform.Cmd.map Mapf0Msg f0cmd
+        , Platform.Cmd.map Mapf1Msg f1cmd
+        , resizeTask
+        ]
     )
 
 
@@ -84,6 +108,16 @@ type Msg
     | OnResize Int Int
 
 
+{-| Calculates the optimal map size based on the size of the window (viewport)
+and the orientation of the device. The multiply values (0.93, 0.77, etc.) are
+based on the dimensions of the svgs that are used.
+
+By default the height of the screen (times 0.93 to leave margin) is taken as
+base value to calculate the map width. If this results in a map width larger
+than screen width, the width is taken as base.
+
+After this the icon sizes are determined based on device type and orientation.
+-}
 calcMapSettings : { window | height : Int, width : Int } -> Device -> Clustermap.MapSettings
 calcMapSettings window { class, orientation } =
     let
@@ -172,25 +206,31 @@ update msg ({ clusterF0, clusterF1 } as model) =
                         Portrait ->
                             predevice
                         Landscape ->
+                            -- If 2 maps don't fit side by side on the screen, display in portrait mode.
                             if mapsettings.width > round (viewp.viewport.width / 2) then
                                 { predevice | orientation = Portrait }
                             else
                                 predevice
             in
+            -- I apply a small correction to the F1 map because the maps do not have the
+            -- same margins, and this helps them allign better.
             ( { model
                 | clusterF0 = { clusterF0 | mapSettings = mapsettings }
-                , deviceInfo = Just device
-                -- I apply a small correction to the F1 map because the maps do not have the same margins, and this helps them allign better
+                , deviceInfo = device
                 , clusterF1 = { clusterF1 | mapSettings = { mapsettings | height = mapsettings.height - 30, width = mapsettings.width - round (30.0 * 0.77) } }
               }
             , Cmd.none
             )
 
+        -- The onResize event gives a width and height, but on mobile these values are
+        -- inconsistent. I use them to set the deviceInfo mostly for show, because these
+        -- values are immediately replaced in the BeResponsive update call which is done to
+        -- get more accurate width and height on mobile.
         OnResize width height ->
             ( { model
-                | deviceInfo = Just <| classifyDevice { width = width, height = height }
+                | deviceInfo = classifyDevice { width = width, height = height }
               }
-            , Task.perform BeResponsive BD.getViewport -- The viewport width and height are more accurate for mobile responsiveness.
+            , Task.perform BeResponsive BD.getViewport
             )
 
 
@@ -230,25 +270,25 @@ view model =
 -- VIEW HELPERS
 
 
-getMapcontainerClass : Maybe Device -> String
+{-| Give the class corresponding to the correct grid layout based on device
+orientation.
+-}
+getMapcontainerClass : Device -> String
 getMapcontainerClass deviceinfo =
-    case deviceinfo of
-        Nothing ->
+    case deviceinfo.orientation of
+        Portrait ->
             "mapcontainer-row"
 
-        Just d ->
-            case d.orientation of
-                Portrait ->
-                    "mapcontainer-row"
-
-                Landscape ->
-                    "mapcontainer-col"
+        Landscape ->
+            "mapcontainer-col"
 
 
 
 -- HELPERS
 
 
+{-| Set the device type and orientation based on a width and height.
+-}
 classifyDevice : { window | height : Int, width : Int } -> Device
 classifyDevice window =
     { class =
@@ -278,7 +318,16 @@ classifyDevice window =
             Landscape
     }
 
-
+{-| Every 30 seconds both clusters are updated, also there is a listener for
+onResize events. 
+-}
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.batch [ Sub.map Mapf0Msg <| Time.every (30 * 1000) Clustermap.FetchSessions, Sub.map Mapf1Msg <| Time.every (30 * 1000) Clustermap.FetchSessions, BE.onResize OnResize ]
+    Sub.batch 
+        [ Sub.map Mapf0Msg 
+            <| Time.every (30 * 1000) Clustermap.FetchSessions
+        , Sub.map Mapf1Msg 
+            <| Time.every (30 * 1000) Clustermap.FetchSessions
+        , BE.onResize OnResize
+        ]
+ 

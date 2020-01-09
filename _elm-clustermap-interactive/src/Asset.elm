@@ -17,6 +17,8 @@ type Image
 -- HOST ICONS
 
 
+{-| Renders an svg circle based on the given pixel size.
+-}
 emptyHost : Int -> Html msg
 emptyHost size =
     svg
