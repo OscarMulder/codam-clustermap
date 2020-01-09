@@ -1,10 +1,11 @@
-module Main exposing (..)
+module Main exposing (main)
 
 import Bootstrap.Button as Button
 import Bootstrap.Popover as Popover
 import Browser
 import Draggable
 import Draggable.Events exposing (onClick, onDragBy, onDragEnd, onDragStart)
+import Dragmap as DM
 import File exposing (File)
 import File.Download as Download
 import File.Select as Select
@@ -17,7 +18,6 @@ import Json.Decode.Field as Field
 import Json.Encode as Encode
 import Maybe exposing (withDefault)
 import Platform.Cmd
-import Table exposing (defaultCustomizations)
 import Task
 import Time exposing (Posix, millisToPosix)
 
@@ -25,7 +25,7 @@ import Time exposing (Posix, millisToPosix)
 
 -- MAIN
 
-
+main : Program () Model Msg
 main =
     Browser.element
         { init = init
@@ -39,44 +39,8 @@ main =
 -- MODEL
 
 
-type alias MapSettings =
-    { height : Int
-    , width : Int
-    , activeSize : Int
-    , emptySize : Int
-    }
-
-
-type alias HostModel =
-    { mapSettings : MapSettings
-    , hostList : List Host
-    }
-
-
-type alias Host =
-    { id : String
-    , position : ( Int, Int )
-    , popState : Popover.State
-    }
-
-
-type HostRequest
-    = HostFailure Http.Error
-    | HostLoading
-    | HostSuccess (List Host)
-
-
-type alias HostGroup =
-    { mapSettings : Maybe MapSettings
-    , hostList : List Host
-    , movingHost : Maybe Host
-    }
-
-
 type alias Model =
-    { hostGroup : HostGroup
-    , reqh : HostRequest
-    , drag : Draggable.State String
+    { dragmapModel : DM.Model
     , uploadHover : Bool
     , uploadFile : Maybe File
     , uploadFileList : List File
