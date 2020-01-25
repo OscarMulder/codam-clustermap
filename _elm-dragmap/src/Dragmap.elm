@@ -35,7 +35,8 @@ type alias MapSettings =
 
 {-| Holds the mapSettings loaded from the host json and the list of hosts. The
 mapSettings width and height are needed to recalculate the icon positions if the
-map size changes. The IconSize values are not used.
+map size changes. The IconSize values are not used. The movingHosts holds the
+host that is currently being dragged (if there is one).
 -}
 type alias HostModel =
     { mapSettings : MapSettings
@@ -68,10 +69,9 @@ type alias Model =
 
 init : String -> Image -> MapSettings -> ( Model, Cmd Msg )
 init hostfile image mapsettings =
-    ( { hostFile = hostfile
-      , mapImage = image
+    ( { mapImage = image
       , mapSettings = mapsettings
-      , hostModel = Nothing
+      , hostModel = getHosts hostfile
       , drag = Draggable.init
       }
     , Cmd.none
@@ -111,33 +111,28 @@ update msg model =
                         Just hmodel ->
                             Just { hmodel | hostList = List.map updatePopState hmodel.hostList }
             in
-            case newhostModel of
-                Nothing ->
-                    ( { model | hostModel = newhostModel }, Cmd.none )
-
-                Just newhmodel ->
-                    ( { model | hostModel = Just newhmodel }, Cmd.none )
+            ( { model | hostModel = newhostModel }, Cmd.none )
 
         OnDragBy delta ->
             let
                 group =
                     dragActiveBy delta hostGroup
             in
-            ( { model | hostGroup = group, reqh = HostSuccess (allHosts group) }, Cmd.none )
+            ( { model | hostModel = group }, Cmd.none )
 
         StartDragging id ->
             let
                 group =
                     startDragging id hostGroup
             in
-            ( { model | hostGroup = group, reqh = HostSuccess (allHosts group) }, Cmd.none )
+            ( { model | hostModel = group }, Cmd.none )
 
         StopDragging ->
             let
                 group =
                     stopDragging hostGroup
             in
-            ( { model | hostGroup = group, reqh = HostSuccess (allHosts group) }, Cmd.none )
+            ( { model | hostModel = group }, Cmd.none )
 
         DragMsg dragMsg ->
             Draggable.update dragConfig dragMsg model
@@ -255,22 +250,29 @@ hostToId host =
 -- DRAG HELPERS
 
 
-startDragging : String -> HostGroup -> HostGroup
-startDragging id ({ mapSettings, hostList, movingHost } as group) =
+allHosts : HostModel -> List Host
+allHosts { mapSettings, movingHost, hostList } =
+    movingHost
+        |> Maybe.map (\a -> a :: hostList)
+        |> Maybe.withDefault hostList
+
+
+startDragging : String -> HostModel -> HostModel
+startDragging id ({ mapSettings, hostList, movingHost } as hostmodel) =
     let
         ( targetAsList, others ) =
             List.partition (.id >> (==) id) hostList
     in
-    { group
+    { hostmodel
         | hostList = others
         , movingHost = targetAsList |> List.head
     }
 
 
-stopDragging : HostGroup -> HostGroup
-stopDragging group =
-    { group
-        | hostList = allHosts group
+stopDragging : HostModel -> HostModel
+stopDragging hostmodel =
+    { hostmodel
+        | hostList = allHosts hostmodel
         , movingHost = Nothing
     }
 
@@ -284,7 +286,7 @@ dragHostBy ( dx, dy ) host =
     { host | position = ( round (toFloat x + dx), round (toFloat y + dy) ) }
 
 
-dragActiveBy : ( Float, Float ) -> HostGroup -> HostGroup
+dragActiveBy : ( Float, Float ) -> HostModel -> HostModel
 dragActiveBy delta group =
     { group | movingHost = group.movingHost |> Maybe.map (dragHostBy delta) }
 
@@ -302,7 +304,6 @@ dragConfig =
 -- HOST DECODERS
 
 
-
 getHosts : String -> Maybe HostModel
 getHosts hostfile =
     let
@@ -311,7 +312,7 @@ getHosts hostfile =
     in
     case result of
         Ok hostmodel ->
-            Just hostmodel
+            hostmodel
 
         Err _ ->
             Nothing
