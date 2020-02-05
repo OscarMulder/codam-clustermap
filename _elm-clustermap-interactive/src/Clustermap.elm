@@ -397,21 +397,11 @@ hostListFilter hostlist session =
 
 sessionFilter : String -> Host -> Bool
 sessionFilter sessionhost host =
-    if String.contains sessionhost host.id then
-        True
-
-    else
-        False
-
+    String.contains sessionhost host.id
 
 hostFilter : String -> Session -> Bool
 hostFilter host session =
-    if String.contains host session.host then
-        True
-
-    else
-        False
-
+    String.contains host session.host
 
 hostToId : String -> String
 hostToId host =

@@ -1,11 +1,10 @@
 module Main exposing (main)
 
+import Asset exposing (Image, image)
 import Bootstrap.Button as Button
 import Bootstrap.Popover as Popover
 import Browser
-import Draggable
-import Draggable.Events exposing (onClick, onDragBy, onDragEnd, onDragStart)
-import Dragmap as DM
+import Dragmap as DM exposing (Msg(..))
 import File exposing (File)
 import File.Download as Download
 import File.Select as Select
@@ -14,16 +13,14 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onMouseUp, preventDefaultOn)
 import Http exposing (..)
 import Json.Decode as Decode exposing (Decoder)
-import Json.Decode.Field as Field
-import Json.Encode as Encode
-import Maybe exposing (withDefault)
 import Platform.Cmd
 import Task
-import Time exposing (Posix, millisToPosix)
+
 
 
 
 -- MAIN
+
 
 main : Program () Model Msg
 main =
@@ -40,10 +37,10 @@ main =
 
 
 type alias Model =
-    { dragmapModel : DM.Model
+    { dragmapModel : Maybe DM.Model
     , uploadHover : Bool
-    , mapFile : Maybe File
-    , hostlistFile : Maybe File
+    , mapFile : Maybe Image
+    , hostlistFile : Maybe String
     , uploadFileList : List File
     }
 
@@ -52,124 +49,55 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     let
         model =
-            Model (HostGroup Nothing Nothing [] Nothing) HostLoading Draggable.init False Nothing []
+            Model Nothing False Nothing Nothing []
     in
-    ( model, Platform.Cmd.batch [ getHosts ] )
+    ( model, Cmd.none )
 
 
 
 -- UPDATE
 
 
-httpErrorString : Error -> String
-httpErrorString error =
-    case error of
-        BadUrl text ->
-            "Bad Url: " ++ text
-
-        Timeout ->
-            "Http Timeout"
-
-        NetworkError ->
-            "Network Error"
-
-        BadStatus response ->
-            "Bad Http Status: " ++ String.fromInt response
-
-        BadBody message ->
-            "Bad Http Payload: "
-                ++ message
-
-
 type Msg
-    = DownloadJson
-    | FilePick
+    = FilePick
     | UploadDragEnter
     | UploadDragLeave
     | GotFiles File (List File)
     | ReadJsonFile String
     | ReadMapFile String
+    | MapMsg DM.Msg
+
 
 
 readFile : File -> Cmd Msg
 readFile file =
-    Task.perform ReadFile (File.toString file)
+    if File.mime file == "application/json" then
+        Task.perform ReadJsonFile (File.toString file)
+    else if File.mime file == "image/svg+xml" then
+        Task.perform ReadMapFile (File.toUrl file)
+    else
+        Cmd.none
+
+setDragModel : Maybe String -> Maybe Image -> Maybe DM.Model
+setDragModel hostlist mapimage =
+    case mapimage of
+        Just mapfile ->
+            case hostlist of
+                Just hostlistfile ->
+                    let
+                        ( mapmodel, mapmsg ) =
+                            DM.init hostlistfile mapfile (DM.MapSettings 1325 1026 60 25)    
+                    in
+                        Just mapmodel
+                Nothing ->
+                    Nothing
+        Nothing ->
+            Nothing
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg ({ hostGroup } as model) =
+update msg model =
     case msg of
-        MorePlease ->
-            ( { model | reqh = HostLoading }
-            , getHosts
-            )
-
-        GotHosts result ->
-            case result of
-                Ok hostlist ->
-                    let
-                        hostgroup =
-                            HostGroup Nothing hostlist Nothing
-                    in
-                    ( { model | reqh = HostSuccess hostlist, hostGroup = hostgroup }
-                    , Cmd.none
-                    )
-
-                Err err ->
-                    ( { model | reqh = HostFailure err }
-                    , Cmd.none
-                    )
-
-        OnDragBy delta ->
-            let
-                group =
-                    dragActiveBy delta hostGroup
-            in
-            ( { model | hostGroup = group, reqh = HostSuccess (allHosts group) }, Cmd.none )
-
-        StartDragging id ->
-            let
-                group =
-                    startDragging id hostGroup
-            in
-            ( { model | hostGroup = group, reqh = HostSuccess (allHosts group) }, Cmd.none )
-
-        StopDragging ->
-            let
-                group =
-                    stopDragging hostGroup
-            in
-            ( { model | hostGroup = group, reqh = HostSuccess (allHosts group) }, Cmd.none )
-
-        DragMsg dragMsg ->
-            Draggable.update dragConfig dragMsg model
-
-        PopoverMsg host state ->
-            let
-                updatePopState item =
-                    if String.contains host item.id then
-                        { item | popState = state }
-                    else
-                        item
-            in
-            let
-                newmoving =
-                    case hostGroup.movingHost of
-                        Nothing ->
-                            Nothing
-                        
-                        Just mhost ->
-                            Just (updatePopState mhost)
-            in
-            let
-                group =
-                    { hostGroup | hostList = List.map updatePopState (allHosts { hostGroup | movingHost = Nothing }), movingHost = newmoving }
-            in
-                ( { model | hostGroup = group, reqh = HostSuccess (allHosts hostGroup) }, Cmd.none )
-
-        DownloadJson ->
-            ( model, downloadJson (allHosts hostGroup) )
-
         FilePick ->
             ( model
             , Select.files [ "application/json", "image/svg+xml" ] GotFiles
@@ -186,22 +114,39 @@ update msg ({ hostGroup } as model) =
             )
 
         GotFiles file files ->
-            let
-                uploadfile =
-                    Just file
-            in
             ( { model
                 | uploadFileList = file :: files
-                , uploadFile = uploadfile
                 , uploadHover = False
               }
             , readFile file
             )
 
-        ReadFile filecontent ->
-            ( { model | hostGroup = getHostList filecontent }
+        ReadJsonFile hoststring ->
+            ( { model
+                | hostlistFile = Just hoststring
+                , dragmapModel = setDragModel (Just hoststring) model.mapFile
+              }
             , Cmd.none
             )
+
+        ReadMapFile mapstring ->
+            ( { model
+                | mapFile = Just (Asset.image mapstring)
+                , dragmapModel = setDragModel model.hostlistFile (Just (Asset.image mapstring))
+              }
+            , Cmd.none
+            )
+
+        MapMsg mapmsg ->
+            case model.dragmapModel of
+                Just dragmodel ->
+                    let
+                        ( newmodel, newcmd ) =
+                            DM.update mapmsg dragmodel
+                    in
+                    ( { model | dragmapModel = Just newmodel }, Platform.Cmd.map MapMsg newcmd )
+                Nothing ->
+                    ( model, Cmd.none)
 
 
 
@@ -209,8 +154,13 @@ update msg ({ hostGroup } as model) =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions { drag } =
-    Draggable.subscriptions DragMsg drag
+subscriptions { dragmapModel } =
+    case dragmapModel of
+        Nothing ->
+            Sub.none
+        Just dmodel ->
+            Sub.map MapMsg <|
+                DM.subscriptions dmodel
 
 
 
@@ -220,11 +170,20 @@ subscriptions { drag } =
 view : Model -> Html Msg
 view model =
     div [ style "position" "relative" ]
+    [ div [ style "position" "relative" ]
         [ h2 [] [ text "Dragmap" ]
-        , Button.button [ Button.onClick DownloadJson ] [ text "Download Json" ]
+        , Button.button [ Button.onClick (MapMsg DownloadJson) ] [ text "Download Json" ]
         , viewUploader model
-        , viewMap model
         ]
+    , div [ style "position" "relative" ]
+        [        
+        case model.dragmapModel of
+            Just dmModel ->
+                Html.map MapMsg <| DM.view dmModel
+            Nothing ->
+                p [][ text "Please upload a host list in json format and a cluster map image in svg format." ]
+        ]
+    ]
 
 
 viewUploader : Model -> Html Msg
@@ -248,12 +207,13 @@ viewUploader model =
         , hijackOn "dragleave" (Decode.succeed UploadDragLeave)
         , hijackOn "drop" dropDecoder
         ]
-        [ button [ Html.Events.onClick FilePick ] [ text "Upload Clustermap" ]
+        [ button [ Html.Events.onClick FilePick ] [ text "Upload Hostlist Json and Map svg" ]
         ]
 
 
 
 -- HELPERS
+
 
 dropDecoder : Decoder Msg
 dropDecoder =
@@ -268,8 +228,3 @@ hijackOn event decoder =
 hijack : msg -> ( msg, Bool )
 hijack msg =
     ( msg, True )
-
-
-downloadJson : List Host -> Cmd msg
-downloadJson hostlist =
-    Download.string "new-hostlist.json" "application/json" (hostlistToJson hostlist)

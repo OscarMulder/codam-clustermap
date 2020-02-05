@@ -1,4 +1,4 @@
-module Dragmap exposing (MapSettings, Model, Msg(..), init, update, view, viewUsedImacs)
+module Dragmap exposing (MapSettings, Model, Msg(..), init, update, view, subscriptions)
 
 {-| This Dragmap module ...
 -}
@@ -6,12 +6,16 @@ module Dragmap exposing (MapSettings, Model, Msg(..), init, update, view, viewUs
 import Asset exposing (Image)
 import Bootstrap.Button as Button
 import Bootstrap.Popover as Popover
+import Draggable
+import Draggable.Events exposing (onClick, onDragBy, onDragEnd, onDragStart)
+import File.Download as Download
 import Html exposing (Html, a, button, div, img, p, text)
 import Html.Attributes exposing (class, href, id, src, style, target)
 import Html.Keyed as Keyed
 import Http exposing (Error)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Field as Field
+import Json.Encode as Encode
 import Maybe exposing (withDefault)
 import Platform.Cmd
 import Time
@@ -55,8 +59,7 @@ type alias Host =
 
 
 type alias Model =
-    { hostfile : String
-    , mapImage : Asset.Image
+    { mapImage : Asset.Image
     , mapSettings : MapSettings
     , hostModel : Maybe HostModel
     , drag : Draggable.State String
@@ -88,11 +91,24 @@ type Msg
     | StartDragging String
     | StopDragging
     | DragMsg (Draggable.Msg String)
+    | DownloadJson
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        DownloadJson ->
+            let
+                hostlist =
+                    case model.hostModel of
+                        Nothing ->
+                            []
+
+                        Just hmodel ->
+                            allHosts hmodel
+            in
+            ( model, downloadJson hostlist )
+
         PopoverMsg host state ->
             let
                 updatePopState session =
@@ -115,24 +131,39 @@ update msg model =
 
         OnDragBy delta ->
             let
-                group =
-                    dragActiveBy delta hostGroup
+                newhostmodel =
+                    case model.hostModel of
+                        Nothing ->
+                            Nothing
+
+                        Just hmodel ->
+                            Just <| dragActiveBy delta hmodel  
             in
-            ( { model | hostModel = group }, Cmd.none )
+            ( { model | hostModel = newhostmodel }, Cmd.none )
 
         StartDragging id ->
             let
-                group =
-                    startDragging id hostGroup
+                newhostmodel =
+                    case model.hostModel of
+                        Nothing ->
+                            Nothing
+
+                        Just hmodel ->
+                            Just <| startDragging id hmodel  
             in
-            ( { model | hostModel = group }, Cmd.none )
+            ( { model | hostModel = newhostmodel }, Cmd.none )
 
         StopDragging ->
             let
-                group =
-                    stopDragging hostGroup
+                newhostmodel =
+                    case model.hostModel of
+                        Nothing ->
+                            Nothing
+
+                        Just hmodel ->
+                            Just <| stopDragging hmodel
             in
-            ( { model | hostModel = group }, Cmd.none )
+            ( { model | hostModel = newhostmodel }, Cmd.none )
 
         DragMsg dragMsg ->
             Draggable.update dragConfig dragMsg model
@@ -142,15 +173,16 @@ update msg model =
 -- VIEW
 
 
-{-| The view is rendered based on if the http request for hosts and sessions
-succeed. If they don't the view can sometimes be rendered using "old" data. In
-that case a warning is displayed. The case where the hostrequest fails but we
-still have a hostmodel shouldn't happen because the hostrequest is done only
-once. It is still handled just to be sure.
+{-| Renders the map based on the uploaded map image and hostfile.
 -}
 view : Model -> Html Msg
 view model =
-    viewMap model sessionlist hostmodel
+    case model.hostModel of
+        Nothing ->
+            p [] [ text "Can't render map" ]
+        
+        Just hostmodel ->
+            viewMap model hostmodel
 
 
 {-| Renders the map and all the icons.
@@ -176,8 +208,8 @@ viewMap model hostmodel =
 displayed on the map.
 -}
 viewIcons : Model -> HostModel -> List ( String, Html Msg )
-viewIcons model  hostmodel =
-    List.map (viewKeyedIcon model  hostmodel.mapSettings) hostmodel.hostList
+viewIcons model hostmodel =
+    List.map (viewKeyedIcon model  hostmodel.mapSettings) (allHosts hostmodel)
 
 
 {-| Keys the icon for faster dom rendering.
@@ -251,7 +283,7 @@ hostToId host =
 
 
 allHosts : HostModel -> List Host
-allHosts { mapSettings, movingHost, hostList } =
+allHosts { mapSettings, hostList, movingHost } =
     movingHost
         |> Maybe.map (\a -> a :: hostList)
         |> Maybe.withDefault hostList
@@ -312,7 +344,7 @@ getHosts hostfile =
     in
     case result of
         Ok hostmodel ->
-            hostmodel
+            Just hostmodel
 
         Err _ ->
             Nothing
@@ -327,6 +359,7 @@ hostModelDecoder =
                     Decode.succeed
                         { mapSettings = mapsettings
                         , hostList = hostlist
+                        , movingHost = Nothing
                         }
 
 
@@ -366,4 +399,32 @@ hostDecoder =
                                 , position = ( left, top )
                                 , popState = Popover.initialState
                                 }
+
+
+downloadJson : List Host -> Cmd msg
+downloadJson hostlist =
+    Download.string "new-hostlist.json" "application/json" (hostlistToJson hostlist)
+
+
+hostlistToJson : List Host -> String
+hostlistToJson hostlist =
+    Encode.encode 2 (Encode.list hostConverter hostlist)
+
+
+hostConverter : Host -> Encode.Value
+hostConverter host =
+    Encode.object
+        [ ( "hostname", Encode.string host.id )
+        , ( "left", Encode.int (Tuple.first host.position) )
+        , ( "top", Encode.int (Tuple.second host.position) )
+        ]
+
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions { drag } =
+    Draggable.subscriptions DragMsg drag
 
