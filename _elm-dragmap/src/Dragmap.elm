@@ -1,24 +1,22 @@
-module Dragmap exposing (MapSettings, Model, Msg(..), init, update, view, subscriptions)
+module Dragmap exposing (MapSettings, Model, Msg(..), init, subscriptions, update, view)
 
-{-| This Dragmap module ...
+{-| This Dragmap module provides the basic functionality for implementing a
+dragmap. It just needs a hostfile (json) and map image (svg).
 -}
 
 import Asset exposing (Image)
 import Bootstrap.Button as Button
 import Bootstrap.Popover as Popover
 import Draggable
-import Draggable.Events exposing (onClick, onDragBy, onDragEnd, onDragStart)
+import Draggable.Events exposing (onDragBy, onDragEnd, onDragStart)
 import File.Download as Download
-import Html exposing (Html, a, button, div, img, p, text)
-import Html.Attributes exposing (class, href, id, src, style, target)
+import Html exposing (Html, button, div, img, p, text)
+import Html.Attributes exposing (class, id, src, style)
 import Html.Keyed as Keyed
-import Http exposing (Error)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Field as Field
 import Json.Encode as Encode
 import Maybe exposing (withDefault)
-import Platform.Cmd
-import Time
 
 
 
@@ -26,7 +24,7 @@ import Time
 
 
 {-| Contains the settings used to render the map.
-These are passed to the init function.
+These are read from the JSON file or defaults are used.
 The sizes are all in pixels.
 -}
 type alias MapSettings =
@@ -37,10 +35,9 @@ type alias MapSettings =
     }
 
 
-{-| Holds the mapSettings loaded from the host json and the list of hosts. The
-mapSettings width and height are needed to recalculate the icon positions if the
-map size changes. The IconSize values are not used. The movingHosts holds the
-host that is currently being dragged (if there is one).
+{-| Holds the mapSettings (from the json decode) and the list of hosts.
+The mapSettings are only hold here to ease the decoding.
+The movingHosts holds the host that is currently being dragged (if there is one).
 -}
 type alias HostModel =
     { mapSettings : MapSettings
@@ -70,18 +67,23 @@ type alias Model =
 -- INIT
 
 
+{-| Since the hostfile decode might fail and it might not have a mapsetting, a
+default value is provided, but it's not actually used since the icons can't be
+rendered and the map won't be displayed.
+-}
 init : String -> Image -> ( Model, Cmd Msg )
 init hostfile image =
     let
         hostmodel =
             getHosts hostfile
+
         mapset =
             case hostmodel of
                 Nothing ->
                     MapSettings 1325 1026 60 25
+
                 Just hmodel ->
                     hmodel.mapSettings
-
     in
     ( { mapImage = image
       , mapSettings = mapset
@@ -117,16 +119,8 @@ update msg model =
 
                         Just hmodel ->
                             allHosts hmodel
-                
-                mapsettings =
-                    case model.hostModel of
-                        Nothing ->
-                            MapSettings 0 0 0 0
-
-                        Just hmodel ->
-                            hmodel.mapSettings
             in
-            ( model, downloadJson hostlist mapsettings )
+            ( model, downloadJson hostlist model.mapSettings )
 
         PopoverMsg host state ->
             let
@@ -156,7 +150,7 @@ update msg model =
                             Nothing
 
                         Just hmodel ->
-                            Just <| dragActiveBy delta hmodel  
+                            Just <| dragActiveBy delta hmodel
             in
             ( { model | hostModel = newhostmodel }, Cmd.none )
 
@@ -168,7 +162,7 @@ update msg model =
                             Nothing
 
                         Just hmodel ->
-                            Just <| startDragging id hmodel  
+                            Just <| startDragging id hmodel
             in
             ( { model | hostModel = newhostmodel }, Cmd.none )
 
@@ -192,14 +186,15 @@ update msg model =
 -- VIEW
 
 
-{-| Renders the map based on the uploaded map image and hostfile.
+{-| Renders the map based on the uploaded map image and hostfile, if the
+hostfile couldn't be decoded an error is displayed.
 -}
 view : Model -> Html Msg
 view model =
     case model.hostModel of
         Nothing ->
-            p [] [ text "Can't render map" ]
-        
+            p [] [ text "Error: Invalid Hostfile." ]
+
         Just hostmodel ->
             viewMap model hostmodel
 
@@ -223,26 +218,25 @@ viewMap model hostmodel =
         )
 
 
-{-| Renders the list of icons with their correct positions which will be
-displayed on the map.
+{-| Renders the list of icons.
 -}
 viewIcons : Model -> HostModel -> List ( String, Html Msg )
 viewIcons model hostmodel =
-    List.map (viewKeyedIcon model  hostmodel.mapSettings) (allHosts hostmodel)
+    List.map (viewKeyedIcon model) (allHosts hostmodel)
 
 
 {-| Keys the icon for faster dom rendering.
 -}
-viewKeyedIcon : Model -> MapSettings -> Host -> ( String, Html Msg )
-viewKeyedIcon model  hostmapsettings host =
-    ( host.id, viewIcon model  hostmapsettings host )
+viewKeyedIcon : Model -> Host -> ( String, Html Msg )
+viewKeyedIcon model host =
+    ( host.id, viewIcon model host )
 
 
-{-| Renders the icon and gives it correct position values. Can be either an
-empty host icon or an active session icon.
+{-| Renders the icon and gives it correct position values.
+Also makes the icon dragable and provides a popover with the (shortened) hostname
 -}
-viewIcon : Model -> MapSettings -> Host -> Html Msg
-viewIcon model hostmapsettings host =
+viewIcon : Model -> Host -> Html Msg
+viewIcon model host =
     let
         offset =
             model.mapSettings.emptyIconSize // 2
@@ -250,18 +244,22 @@ viewIcon model hostmapsettings host =
     div
         [ Draggable.mouseTrigger host.id DragMsg
         , class "imac-location"
-        , style "left"
-            <| String.fromInt ((calculateLeft model hostmapsettings
-            <| Tuple.first host.position) - offset) ++ "px"
-        , style "top"
-            <| String.fromInt ((calculateTop model hostmapsettings
-            <| Tuple.second host.position) - offset) ++ "px"
+        , style "left" <|
+            String.fromInt
+                ( Tuple.first host.position - offset
+                )
+                ++ "px"
+        , style "top" <|
+            String.fromInt
+                ( Tuple.second host.position - offset
+                )
+                ++ "px"
         ]
         [ Popover.config
             (Button.button
-                [ Button.attrs
-                    <| id (hostToId host.id)
-                    :: Popover.onHover host.popState (PopoverMsg host.id)
+                [ Button.attrs <|
+                    id (hostToId host.id)
+                        :: Popover.onHover host.popState (PopoverMsg host.id)
                 ]
                 [ Asset.emptyHost model.mapSettings.emptyIconSize ]
             )
@@ -271,25 +269,8 @@ viewIcon model hostmapsettings host =
         ]
 
 
+
 -- HOST HELPERS
-
-
-{-| Recalculates the left position value using the base map size (from the
-hostModel) and the actual mapsize.
--}
-calculateLeft : Model -> MapSettings -> Int -> Int
-calculateLeft model hostmapsettings left =
-    round
-        <| (toFloat left / toFloat hostmapsettings.width) * toFloat model.mapSettings.width
-
-
-{-| Recalculates the top position value using the base map size (from the
-hostModel) and the actual mapsize.
--}
-calculateTop : Model -> MapSettings -> Int -> Int
-calculateTop model hostmapsettings top =
-    round
-        <| (toFloat top / toFloat hostmapsettings.height) * toFloat model.mapSettings.height
 
 
 hostToId : String -> String
@@ -302,14 +283,14 @@ hostToId host =
 
 
 allHosts : HostModel -> List Host
-allHosts { mapSettings, hostList, movingHost } =
+allHosts { hostList, movingHost } =
     movingHost
         |> Maybe.map (\a -> a :: hostList)
         |> Maybe.withDefault hostList
 
 
 startDragging : String -> HostModel -> HostModel
-startDragging id ({ mapSettings, hostList, movingHost } as hostmodel) =
+startDragging id ({ hostList } as hostmodel) =
     let
         ( targetAsList, others ) =
             List.partition (.id >> (==) id) hostList
@@ -384,6 +365,7 @@ getHosts hostfile =
                 Err _ ->
                     Nothing
 
+
 hostModelDecoder : Decoder HostModel
 hostModelDecoder =
     Field.attempt "mapsettings" mapSettingsDecoder <|
@@ -393,8 +375,9 @@ hostModelDecoder =
                     let
                         mapsettings =
                             case maybemapsettings of
-                                Nothing -> 
+                                Nothing ->
                                     MapSettings 1325 1026 60 25
+
                                 Just settings ->
                                     settings
                     in
@@ -403,7 +386,6 @@ hostModelDecoder =
                         , hostList = hostlist
                         , movingHost = Nothing
                         }
-
 
 
 mapSettingsDecoder : Decoder MapSettings
@@ -438,12 +420,13 @@ hostDecoder =
                     Field.attempt "top" Decode.int <|
                         \maybetop ->
                             case ( maybeleft, maybetop ) of
-                                ( Just left, Just top) ->
+                                ( Just left, Just top ) ->
                                     Decode.succeed
                                         { id = hostname
                                         , position = ( left, top )
                                         , popState = Popover.initialState
                                         }
+
                                 _ ->
                                     Decode.succeed
                                         { id = hostname
@@ -459,21 +442,21 @@ downloadJson hostlist mapsettings =
 
 hostmodelToJson : List Host -> MapSettings -> String
 hostmodelToJson hostlist mapsettings =
-    Encode.encode 2 <| 
+    Encode.encode 2 <|
         Encode.object
             [ ( "mapsettings", mapsettingsToJson mapsettings )
-            , ( "hosts" , hostlistToJson hostlist )
+            , ( "hosts", hostlistToJson hostlist )
             ]
 
 
 mapsettingsToJson : MapSettings -> Encode.Value
 mapsettingsToJson mapsettings =
     Encode.object
-    [ ( "heigth", Encode.int mapsettings.height )
-    , ( "width", Encode.int mapsettings.width )
-    , ( "active-size", Encode.int mapsettings.activeIconSize )
-    , ( "empty-size", Encode.int mapsettings.emptyIconSize )
-    ]
+        [ ( "heigth", Encode.int mapsettings.height )
+        , ( "width", Encode.int mapsettings.width )
+        , ( "active-size", Encode.int mapsettings.activeIconSize )
+        , ( "empty-size", Encode.int mapsettings.emptyIconSize )
+        ]
 
 
 hostlistToJson : List Host -> Encode.Value
@@ -497,4 +480,3 @@ hostConverter host =
 subscriptions : Model -> Sub Msg
 subscriptions { drag } =
     Draggable.subscriptions DragMsg drag
-

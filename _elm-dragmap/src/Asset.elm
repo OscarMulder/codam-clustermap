@@ -1,4 +1,4 @@
-module Asset exposing (Image, clusterf0, clusterf1, emptyHost, image, src, toString)
+module Asset exposing (Image, emptyHost, image, src, toString)
 
 {-| Assets, such as images
 -}
@@ -33,22 +33,6 @@ emptyHost size =
             ]
             []
         ]
-
-
-
--- IMAGES
-
-
-clusterf0 : Image
-clusterf0 =
-    Image "img/f0.svg"
-
-
-clusterf1 : Image
-clusterf1 =
-    Image "img/f1.svg"
-
-
 
 -- USING IMAGES
 

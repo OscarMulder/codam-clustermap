@@ -6030,7 +6030,6 @@ var $author$project$Main$setDragModel = F2(
 				var hostlistfile = hostlist.a;
 				var _v2 = A2($author$project$Dragmap$init, hostlistfile, mapfile);
 				var mapmodel = _v2.a;
-				var mapmsg = _v2.b;
 				return $elm$core$Maybe$Just(mapmodel);
 			} else {
 				return $elm$core$Maybe$Nothing;
@@ -6059,7 +6058,6 @@ var $elm$core$Maybe$withDefault = F2(
 		}
 	});
 var $author$project$Dragmap$allHosts = function (_v0) {
-	var mapSettings = _v0.mapSettings;
 	var hostList = _v0.hostList;
 	var movingHost = _v0.movingHost;
 	return A2(
@@ -6288,9 +6286,7 @@ var $elm$core$List$partition = F2(
 	});
 var $author$project$Dragmap$startDragging = F2(
 	function (id, hostmodel) {
-		var mapSettings = hostmodel.mapSettings;
 		var hostList = hostmodel.hostList;
-		var movingHost = hostmodel.movingHost;
 		var _v0 = A2(
 			$elm$core$List$partition,
 			A2(
@@ -6423,15 +6419,6 @@ var $author$project$Dragmap$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
 			case 'DownloadJson':
-				var mapsettings = function () {
-					var _v2 = model.hostModel;
-					if (_v2.$ === 'Nothing') {
-						return A4($author$project$Dragmap$MapSettings, 0, 0, 0, 0);
-					} else {
-						var hmodel = _v2.a;
-						return hmodel.mapSettings;
-					}
-				}();
 				var hostlist = function () {
 					var _v1 = model.hostModel;
 					if (_v1.$ === 'Nothing') {
@@ -6443,7 +6430,7 @@ var $author$project$Dragmap$update = F2(
 				}();
 				return _Utils_Tuple2(
 					model,
-					A2($author$project$Dragmap$downloadJson, hostlist, mapsettings));
+					A2($author$project$Dragmap$downloadJson, hostlist, model.mapSettings));
 			case 'PopoverMsg':
 				var host = msg.a;
 				var state = msg.b;
@@ -6453,11 +6440,11 @@ var $author$project$Dragmap$update = F2(
 						{popState: state}) : session;
 				};
 				var newhostModel = function () {
-					var _v3 = model.hostModel;
-					if (_v3.$ === 'Nothing') {
+					var _v2 = model.hostModel;
+					if (_v2.$ === 'Nothing') {
 						return $elm$core$Maybe$Nothing;
 					} else {
-						var hmodel = _v3.a;
+						var hmodel = _v2.a;
 						return $elm$core$Maybe$Just(
 							_Utils_update(
 								hmodel,
@@ -6474,11 +6461,11 @@ var $author$project$Dragmap$update = F2(
 			case 'OnDragBy':
 				var delta = msg.a;
 				var newhostmodel = function () {
-					var _v4 = model.hostModel;
-					if (_v4.$ === 'Nothing') {
+					var _v3 = model.hostModel;
+					if (_v3.$ === 'Nothing') {
 						return $elm$core$Maybe$Nothing;
 					} else {
-						var hmodel = _v4.a;
+						var hmodel = _v3.a;
 						return $elm$core$Maybe$Just(
 							A2($author$project$Dragmap$dragActiveBy, delta, hmodel));
 					}
@@ -6491,11 +6478,11 @@ var $author$project$Dragmap$update = F2(
 			case 'StartDragging':
 				var id = msg.a;
 				var newhostmodel = function () {
-					var _v5 = model.hostModel;
-					if (_v5.$ === 'Nothing') {
+					var _v4 = model.hostModel;
+					if (_v4.$ === 'Nothing') {
 						return $elm$core$Maybe$Nothing;
 					} else {
-						var hmodel = _v5.a;
+						var hmodel = _v4.a;
 						return $elm$core$Maybe$Just(
 							A2($author$project$Dragmap$startDragging, id, hmodel));
 					}
@@ -6507,11 +6494,11 @@ var $author$project$Dragmap$update = F2(
 					$elm$core$Platform$Cmd$none);
 			case 'StopDragging':
 				var newhostmodel = function () {
-					var _v6 = model.hostModel;
-					if (_v6.$ === 'Nothing') {
+					var _v5 = model.hostModel;
+					if (_v5.$ === 'Nothing') {
 						return $elm$core$Maybe$Nothing;
 					} else {
-						var hmodel = _v6.a;
+						var hmodel = _v5.a;
 						return $elm$core$Maybe$Just(
 							$author$project$Dragmap$stopDragging(hmodel));
 					}
@@ -6844,14 +6831,6 @@ var $author$project$Asset$toString = function (_v0) {
 var $author$project$Dragmap$PopoverMsg = F2(
 	function (a, b) {
 		return {$: 'PopoverMsg', a: a, b: b};
-	});
-var $author$project$Dragmap$calculateLeft = F3(
-	function (model, hostmapsettings, left) {
-		return $elm$core$Basics$round((left / hostmapsettings.width) * model.mapSettings.width);
-	});
-var $author$project$Dragmap$calculateTop = F3(
-	function (model, hostmapsettings, top) {
-		return $elm$core$Basics$round((top / hostmapsettings.height) * model.mapSettings.height);
 	});
 var $rundis$elm_bootstrap$Bootstrap$Popover$Config = function (a) {
 	return {$: 'Config', a: a};
@@ -7396,8 +7375,8 @@ var $rundis$elm_bootstrap$Bootstrap$Popover$view = F2(
 					A2($rundis$elm_bootstrap$Bootstrap$Popover$popoverView, state, conf)
 				]));
 	});
-var $author$project$Dragmap$viewIcon = F3(
-	function (model, hostmapsettings, host) {
+var $author$project$Dragmap$viewIcon = F2(
+	function (model, host) {
 		var offset = (model.mapSettings.emptyIconSize / 2) | 0;
 		return A2(
 			$elm$html$Html$div,
@@ -7408,13 +7387,11 @@ var $author$project$Dragmap$viewIcon = F3(
 					A2(
 					$elm$html$Html$Attributes$style,
 					'left',
-					$elm$core$String$fromInt(
-						A3($author$project$Dragmap$calculateLeft, model, hostmapsettings, host.position.a) - offset) + 'px'),
+					$elm$core$String$fromInt(host.position.a - offset) + 'px'),
 					A2(
 					$elm$html$Html$Attributes$style,
 					'top',
-					$elm$core$String$fromInt(
-						A3($author$project$Dragmap$calculateTop, model, hostmapsettings, host.position.b) - offset) + 'px')
+					$elm$core$String$fromInt(host.position.b - offset) + 'px')
 				]),
 			_List_fromArray(
 				[
@@ -7451,17 +7428,17 @@ var $author$project$Dragmap$viewIcon = F3(
 										]))))))
 				]));
 	});
-var $author$project$Dragmap$viewKeyedIcon = F3(
-	function (model, hostmapsettings, host) {
+var $author$project$Dragmap$viewKeyedIcon = F2(
+	function (model, host) {
 		return _Utils_Tuple2(
 			host.id,
-			A3($author$project$Dragmap$viewIcon, model, hostmapsettings, host));
+			A2($author$project$Dragmap$viewIcon, model, host));
 	});
 var $author$project$Dragmap$viewIcons = F2(
 	function (model, hostmodel) {
 		return A2(
 			$elm$core$List$map,
-			A2($author$project$Dragmap$viewKeyedIcon, model, hostmodel.mapSettings),
+			$author$project$Dragmap$viewKeyedIcon(model),
 			$author$project$Dragmap$allHosts(hostmodel));
 	});
 var $author$project$Dragmap$viewMap = F2(
@@ -7504,7 +7481,7 @@ var $author$project$Dragmap$view = function (model) {
 			_List_Nil,
 			_List_fromArray(
 				[
-					$elm$html$Html$text('Can\'t render map')
+					$elm$html$Html$text('Error: Invalid Hostfile.')
 				]));
 	} else {
 		var hostmodel = _v0.a;

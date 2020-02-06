@@ -2,20 +2,16 @@ module Main exposing (main)
 
 import Asset exposing (Image, image)
 import Bootstrap.Button as Button
-import Bootstrap.Popover as Popover
 import Browser
 import Dragmap as DM exposing (Msg(..))
 import File exposing (File)
-import File.Download as Download
 import File.Select as Select
-import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Events exposing (onMouseUp, preventDefaultOn)
-import Http exposing (..)
+import Html exposing (Attribute, Html, button, div, h2, p, text)
+import Html.Attributes exposing (class, style)
+import Html.Events exposing (preventDefaultOn)
 import Json.Decode as Decode exposing (Decoder)
 import Platform.Cmd
 import Task
-
 
 
 
@@ -45,6 +41,8 @@ type alias Model =
     }
 
 
+{-| Nothing happens until 2 files are uploaded, so we start with a very empty model.
+-}
 init : () -> ( Model, Cmd Msg )
 init _ =
     let
@@ -68,16 +66,23 @@ type Msg
     | MapMsg DM.Msg
 
 
-
+{-| This accepts json or svg files, and decides which Msg should handle them.
+-}
 readFile : File -> Cmd Msg
 readFile file =
     if File.mime file == "application/json" then
         Task.perform ReadJsonFile (File.toString file)
+
     else if File.mime file == "image/svg+xml" then
         Task.perform ReadMapFile (File.toUrl file)
+
     else
         Cmd.none
 
+
+{-| If a mapfile and a hostfile are uploaded, the dragmap can be initialized in
+the model.
+-}
 setDragModel : Maybe String -> Maybe Image -> Maybe DM.Model
 setDragModel hostlist mapimage =
     case mapimage of
@@ -85,12 +90,14 @@ setDragModel hostlist mapimage =
             case hostlist of
                 Just hostlistfile ->
                     let
-                        ( mapmodel, mapmsg ) =
-                            DM.init hostlistfile mapfile    
+                        ( mapmodel, _ ) =
+                            DM.init hostlistfile mapfile
                     in
-                        Just mapmodel
+                    Just mapmodel
+
                 Nothing ->
                     Nothing
+
         Nothing ->
             Nothing
 
@@ -145,19 +152,24 @@ update msg model =
                             DM.update mapmsg dragmodel
                     in
                     ( { model | dragmapModel = Just newmodel }, Platform.Cmd.map MapMsg newcmd )
+
                 Nothing ->
-                    ( model, Cmd.none)
+                    ( model, Cmd.none )
 
 
 
 -- SUBSCRIPTIONS
 
 
+{-| If there is an initialized dragmap model, the dragmap subscribtions need to
+be "mapped" through here.
+-}
 subscriptions : Model -> Sub Msg
 subscriptions { dragmapModel } =
     case dragmapModel of
         Nothing ->
             Sub.none
+
         Just dmodel ->
             Sub.map MapMsg <|
                 DM.subscriptions dmodel
@@ -167,25 +179,31 @@ subscriptions { dragmapModel } =
 -- VIEW
 
 
+{-| The map is only displayed if the model is initialized.
+-}
 view : Model -> Html Msg
 view model =
     div [ style "position" "relative" ]
-    [ div [ style "position" "relative" ]
-        [ h2 [] [ text "Dragmap" ]
-        , viewUploader model
-        , Button.button [ Button.attrs [ class "download-button" ], Button.onClick (MapMsg DownloadJson) ] [ text "Download Json" ]
+        [ div [ style "position" "relative" ]
+            [ h2 [] [ text "Dragmap" ]
+            , viewUploader model
+            , Button.button [ Button.attrs [ class "download-button" ], Button.onClick (MapMsg DownloadJson) ] [ text "Download Json" ]
+            ]
+        , div [ style "position" "relative" ]
+            [ case model.dragmapModel of
+                Just dmModel ->
+                    Html.map MapMsg <| DM.view dmModel
+
+                Nothing ->
+                    p [] [ text "Please upload a host list in json format and a cluster map image in svg format." ]
+            ]
         ]
-    , div [ style "position" "relative" ]
-        [        
-        case model.dragmapModel of
-            Just dmModel ->
-                Html.map MapMsg <| DM.view dmModel
-            Nothing ->
-                p [][ text "Please upload a host list in json format and a cluster map image in svg format." ]
-        ]
-    ]
 
 
+{-| Even though you can upload multiple files, only 1 is handled
+(I know I could do better). But you can just keep dragging files into this and
+it will always use the last map or json you uploaded.
+-}
 viewUploader : Model -> Html Msg
 viewUploader model =
     div
@@ -220,6 +238,9 @@ dropDecoder =
     Decode.at [ "dataTransfer", "files" ] (Decode.oneOrMore GotFiles File.decoder)
 
 
+{-| I don't understand this, but the example had it so I guess it is needed for
+the file upload.
+-}
 hijackOn : String -> Decode.Decoder msg -> Attribute msg
 hijackOn event decoder =
     preventDefaultOn event (Decode.map hijack decoder)
