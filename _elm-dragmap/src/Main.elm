@@ -86,7 +86,7 @@ setDragModel hostlist mapimage =
                 Just hostlistfile ->
                     let
                         ( mapmodel, mapmsg ) =
-                            DM.init hostlistfile mapfile (DM.MapSettings 1325 1026 60 25)    
+                            DM.init hostlistfile mapfile    
                     in
                         Just mapmodel
                 Nothing ->
@@ -172,8 +172,8 @@ view model =
     div [ style "position" "relative" ]
     [ div [ style "position" "relative" ]
         [ h2 [] [ text "Dragmap" ]
-        , Button.button [ Button.onClick (MapMsg DownloadJson) ] [ text "Download Json" ]
         , viewUploader model
+        , Button.button [ Button.attrs [ class "download-button" ], Button.onClick (MapMsg DownloadJson) ] [ text "Download Json" ]
         ]
     , div [ style "position" "relative" ]
         [        
@@ -197,8 +197,8 @@ viewUploader model =
                 "6px dashed #ccc"
             )
         , style "border-radius" "20px"
-        , style "width" "250px"
-        , style "height" "75px"
+        , style "width" "400px"
+        , style "height" "100px"
         , style "padding" "20px"
         , style "display" "inline-block"
         , style "align-items" "center"

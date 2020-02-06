@@ -5857,6 +5857,24 @@ var $author$project$Dragmap$MapSettings = F4(
 		return {activeIconSize: activeIconSize, emptyIconSize: emptyIconSize, height: height, width: width};
 	});
 var $elm$json$Json$Decode$decodeString = _Json_runOnString;
+var $elm$json$Json$Decode$andThen = _Json_andThen;
+var $elm$json$Json$Decode$oneOf = _Json_oneOf;
+var $elm$json$Json$Decode$maybe = function (decoder) {
+	return $elm$json$Json$Decode$oneOf(
+		_List_fromArray(
+			[
+				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder),
+				$elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing)
+			]));
+};
+var $webbhuset$elm_json_decode$Json$Decode$Field$attempt = F3(
+	function (fieldName, valueDecoder, continuation) {
+		return A2(
+			$elm$json$Json$Decode$andThen,
+			continuation,
+			$elm$json$Json$Decode$maybe(
+				A2($elm$json$Json$Decode$field, fieldName, valueDecoder)));
+	});
 var $rundis$elm_bootstrap$Bootstrap$Popover$State = function (a) {
 	return {$: 'State', a: a};
 };
@@ -5870,7 +5888,6 @@ var $rundis$elm_bootstrap$Bootstrap$Popover$initialState = $rundis$elm_bootstrap
 		isActive: false
 	});
 var $elm$json$Json$Decode$int = _Json_decodeInt;
-var $elm$json$Json$Decode$andThen = _Json_andThen;
 var $webbhuset$elm_json_decode$Json$Decode$Field$require = F3(
 	function (fieldName, valueDecoder, continuation) {
 		return A2(
@@ -5885,21 +5902,33 @@ var $author$project$Dragmap$hostDecoder = A3(
 	$elm$json$Json$Decode$string,
 	function (hostname) {
 		return A3(
-			$webbhuset$elm_json_decode$Json$Decode$Field$require,
+			$webbhuset$elm_json_decode$Json$Decode$Field$attempt,
 			'left',
 			$elm$json$Json$Decode$int,
-			function (left) {
+			function (maybeleft) {
 				return A3(
-					$webbhuset$elm_json_decode$Json$Decode$Field$require,
+					$webbhuset$elm_json_decode$Json$Decode$Field$attempt,
 					'top',
 					$elm$json$Json$Decode$int,
-					function (top) {
-						return $elm$json$Json$Decode$succeed(
-							{
-								id: hostname,
-								popState: $rundis$elm_bootstrap$Bootstrap$Popover$initialState,
-								position: _Utils_Tuple2(left, top)
-							});
+					function (maybetop) {
+						var _v0 = _Utils_Tuple2(maybeleft, maybetop);
+						if ((_v0.a.$ === 'Just') && (_v0.b.$ === 'Just')) {
+							var left = _v0.a.a;
+							var top = _v0.b.a;
+							return $elm$json$Json$Decode$succeed(
+								{
+									id: hostname,
+									popState: $rundis$elm_bootstrap$Bootstrap$Popover$initialState,
+									position: _Utils_Tuple2(left, top)
+								});
+						} else {
+							return $elm$json$Json$Decode$succeed(
+								{
+									id: hostname,
+									popState: $rundis$elm_bootstrap$Bootstrap$Popover$initialState,
+									position: _Utils_Tuple2(50, 50)
+								});
+						}
 					});
 			});
 	});
@@ -5932,15 +5961,23 @@ var $author$project$Dragmap$mapSettingsDecoder = A3(
 			});
 	});
 var $author$project$Dragmap$hostModelDecoder = A3(
-	$webbhuset$elm_json_decode$Json$Decode$Field$require,
+	$webbhuset$elm_json_decode$Json$Decode$Field$attempt,
 	'mapsettings',
 	$author$project$Dragmap$mapSettingsDecoder,
-	function (mapsettings) {
+	function (maybemapsettings) {
 		return A3(
 			$webbhuset$elm_json_decode$Json$Decode$Field$require,
 			'hosts',
 			$author$project$Dragmap$hostListDecoder,
 			function (hostlist) {
+				var mapsettings = function () {
+					if (maybemapsettings.$ === 'Nothing') {
+						return A4($author$project$Dragmap$MapSettings, 1325, 1026, 60, 25);
+					} else {
+						var settings = maybemapsettings.a;
+						return settings;
+					}
+				}();
 				return $elm$json$Json$Decode$succeed(
 					{hostList: hostlist, mapSettings: mapsettings, movingHost: $elm$core$Maybe$Nothing});
 			});
@@ -5951,7 +5988,18 @@ var $author$project$Dragmap$getHosts = function (hostfile) {
 		var hostmodel = result.a;
 		return $elm$core$Maybe$Just(hostmodel);
 	} else {
-		return $elm$core$Maybe$Nothing;
+		var result2 = A2($elm$json$Json$Decode$decodeString, $author$project$Dragmap$hostListDecoder, hostfile);
+		if (result2.$ === 'Ok') {
+			var hostlist = result2.a;
+			var hostmodel = {
+				hostList: hostlist,
+				mapSettings: A4($author$project$Dragmap$MapSettings, 1325, 1026, 60, 25),
+				movingHost: $elm$core$Maybe$Nothing
+			};
+			return $elm$core$Maybe$Just(hostmodel);
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
 	}
 };
 var $zaboco$elm_draggable$Internal$NotDragging = {$: 'NotDragging'};
@@ -5959,15 +6007,19 @@ var $zaboco$elm_draggable$Draggable$State = function (a) {
 	return {$: 'State', a: a};
 };
 var $zaboco$elm_draggable$Draggable$init = $zaboco$elm_draggable$Draggable$State($zaboco$elm_draggable$Internal$NotDragging);
-var $author$project$Dragmap$init = F3(
-	function (hostfile, image, mapsettings) {
+var $author$project$Dragmap$init = F2(
+	function (hostfile, image) {
+		var hostmodel = $author$project$Dragmap$getHosts(hostfile);
+		var mapset = function () {
+			if (hostmodel.$ === 'Nothing') {
+				return A4($author$project$Dragmap$MapSettings, 1325, 1026, 60, 25);
+			} else {
+				var hmodel = hostmodel.a;
+				return hmodel.mapSettings;
+			}
+		}();
 		return _Utils_Tuple2(
-			{
-				drag: $zaboco$elm_draggable$Draggable$init,
-				hostModel: $author$project$Dragmap$getHosts(hostfile),
-				mapImage: image,
-				mapSettings: mapsettings
-			},
+			{drag: $zaboco$elm_draggable$Draggable$init, hostModel: hostmodel, mapImage: image, mapSettings: mapset},
 			$elm$core$Platform$Cmd$none);
 	});
 var $author$project$Main$setDragModel = F2(
@@ -5976,11 +6028,7 @@ var $author$project$Main$setDragModel = F2(
 			var mapfile = mapimage.a;
 			if (hostlist.$ === 'Just') {
 				var hostlistfile = hostlist.a;
-				var _v2 = A3(
-					$author$project$Dragmap$init,
-					hostlistfile,
-					mapfile,
-					A4($author$project$Dragmap$MapSettings, 1325, 1026, 60, 25));
+				var _v2 = A2($author$project$Dragmap$init, hostlistfile, mapfile);
 				var mapmodel = _v2.a;
 				var mapmsg = _v2.b;
 				return $elm$core$Maybe$Just(mapmodel);
@@ -6068,11 +6116,42 @@ var $elm$json$Json$Encode$list = F2(
 				entries));
 	});
 var $author$project$Dragmap$hostlistToJson = function (hostlist) {
-	return A2(
-		$elm$json$Json$Encode$encode,
-		2,
-		A2($elm$json$Json$Encode$list, $author$project$Dragmap$hostConverter, hostlist));
+	return A2($elm$json$Json$Encode$list, $author$project$Dragmap$hostConverter, hostlist);
 };
+var $author$project$Dragmap$mapsettingsToJson = function (mapsettings) {
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'heigth',
+				$elm$json$Json$Encode$int(mapsettings.height)),
+				_Utils_Tuple2(
+				'width',
+				$elm$json$Json$Encode$int(mapsettings.width)),
+				_Utils_Tuple2(
+				'active-size',
+				$elm$json$Json$Encode$int(mapsettings.activeIconSize)),
+				_Utils_Tuple2(
+				'empty-size',
+				$elm$json$Json$Encode$int(mapsettings.emptyIconSize))
+			]));
+};
+var $author$project$Dragmap$hostmodelToJson = F2(
+	function (hostlist, mapsettings) {
+		return A2(
+			$elm$json$Json$Encode$encode,
+			2,
+			$elm$json$Json$Encode$object(
+				_List_fromArray(
+					[
+						_Utils_Tuple2(
+						'mapsettings',
+						$author$project$Dragmap$mapsettingsToJson(mapsettings)),
+						_Utils_Tuple2(
+						'hosts',
+						$author$project$Dragmap$hostlistToJson(hostlist))
+					])));
+	});
 var $elm$file$File$Download$string = F3(
 	function (name, mime, content) {
 		return A2(
@@ -6080,13 +6159,14 @@ var $elm$file$File$Download$string = F3(
 			$elm$core$Basics$never,
 			A3(_File_download, name, mime, content));
 	});
-var $author$project$Dragmap$downloadJson = function (hostlist) {
-	return A3(
-		$elm$file$File$Download$string,
-		'new-hostlist.json',
-		'application/json',
-		$author$project$Dragmap$hostlistToJson(hostlist));
-};
+var $author$project$Dragmap$downloadJson = F2(
+	function (hostlist, mapsettings) {
+		return A3(
+			$elm$file$File$Download$string,
+			'new-hostlist.json',
+			'application/json',
+			A2($author$project$Dragmap$hostmodelToJson, hostlist, mapsettings));
+	});
 var $elm$core$Basics$round = _Basics_round;
 var $author$project$Dragmap$dragHostBy = F2(
 	function (_v0, host) {
@@ -6343,6 +6423,15 @@ var $author$project$Dragmap$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
 			case 'DownloadJson':
+				var mapsettings = function () {
+					var _v2 = model.hostModel;
+					if (_v2.$ === 'Nothing') {
+						return A4($author$project$Dragmap$MapSettings, 0, 0, 0, 0);
+					} else {
+						var hmodel = _v2.a;
+						return hmodel.mapSettings;
+					}
+				}();
 				var hostlist = function () {
 					var _v1 = model.hostModel;
 					if (_v1.$ === 'Nothing') {
@@ -6354,7 +6443,7 @@ var $author$project$Dragmap$update = F2(
 				}();
 				return _Utils_Tuple2(
 					model,
-					$author$project$Dragmap$downloadJson(hostlist));
+					A2($author$project$Dragmap$downloadJson, hostlist, mapsettings));
 			case 'PopoverMsg':
 				var host = msg.a;
 				var state = msg.b;
@@ -6364,11 +6453,11 @@ var $author$project$Dragmap$update = F2(
 						{popState: state}) : session;
 				};
 				var newhostModel = function () {
-					var _v2 = model.hostModel;
-					if (_v2.$ === 'Nothing') {
+					var _v3 = model.hostModel;
+					if (_v3.$ === 'Nothing') {
 						return $elm$core$Maybe$Nothing;
 					} else {
-						var hmodel = _v2.a;
+						var hmodel = _v3.a;
 						return $elm$core$Maybe$Just(
 							_Utils_update(
 								hmodel,
@@ -6385,11 +6474,11 @@ var $author$project$Dragmap$update = F2(
 			case 'OnDragBy':
 				var delta = msg.a;
 				var newhostmodel = function () {
-					var _v3 = model.hostModel;
-					if (_v3.$ === 'Nothing') {
+					var _v4 = model.hostModel;
+					if (_v4.$ === 'Nothing') {
 						return $elm$core$Maybe$Nothing;
 					} else {
-						var hmodel = _v3.a;
+						var hmodel = _v4.a;
 						return $elm$core$Maybe$Just(
 							A2($author$project$Dragmap$dragActiveBy, delta, hmodel));
 					}
@@ -6402,11 +6491,11 @@ var $author$project$Dragmap$update = F2(
 			case 'StartDragging':
 				var id = msg.a;
 				var newhostmodel = function () {
-					var _v4 = model.hostModel;
-					if (_v4.$ === 'Nothing') {
+					var _v5 = model.hostModel;
+					if (_v5.$ === 'Nothing') {
 						return $elm$core$Maybe$Nothing;
 					} else {
-						var hmodel = _v4.a;
+						var hmodel = _v5.a;
 						return $elm$core$Maybe$Just(
 							A2($author$project$Dragmap$startDragging, id, hmodel));
 					}
@@ -6418,11 +6507,11 @@ var $author$project$Dragmap$update = F2(
 					$elm$core$Platform$Cmd$none);
 			case 'StopDragging':
 				var newhostmodel = function () {
-					var _v5 = model.hostModel;
-					if (_v5.$ === 'Nothing') {
+					var _v6 = model.hostModel;
+					if (_v6.$ === 'Nothing') {
 						return $elm$core$Maybe$Nothing;
 					} else {
-						var hmodel = _v5.a;
+						var hmodel = _v6.a;
 						return $elm$core$Maybe$Just(
 							$author$project$Dragmap$stopDragging(hmodel));
 					}
@@ -6520,6 +6609,12 @@ var $author$project$Main$update = F2(
 		}
 	});
 var $author$project$Dragmap$DownloadJson = {$: 'DownloadJson'};
+var $rundis$elm_bootstrap$Bootstrap$Internal$Button$Attrs = function (a) {
+	return {$: 'Attrs', a: a};
+};
+var $rundis$elm_bootstrap$Bootstrap$Button$attrs = function (attrs_) {
+	return $rundis$elm_bootstrap$Bootstrap$Internal$Button$Attrs(attrs_);
+};
 var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$core$Maybe$andThen = F2(
 	function (callback, maybeValue) {
@@ -6703,12 +6798,6 @@ var $elm$html$Html$div = _VirtualDom_node('div');
 var $elm$html$Html$h2 = _VirtualDom_node('h2');
 var $elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
 var $elm$html$Html$map = $elm$virtual_dom$VirtualDom$map;
-var $rundis$elm_bootstrap$Bootstrap$Internal$Button$Attrs = function (a) {
-	return {$: 'Attrs', a: a};
-};
-var $rundis$elm_bootstrap$Bootstrap$Button$attrs = function (attrs_) {
-	return $rundis$elm_bootstrap$Bootstrap$Internal$Button$Attrs(attrs_);
-};
 var $elm$virtual_dom$VirtualDom$MayPreventDefault = function (a) {
 	return {$: 'MayPreventDefault', a: a};
 };
@@ -6807,7 +6896,7 @@ var $author$project$Asset$emptyHost = function (size) {
 		$elm$svg$Svg$svg,
 		_List_fromArray(
 			[
-				$elm$svg$Svg$Attributes$class('empty-host'),
+				$elm$svg$Svg$Attributes$class('empty-host-drag'),
 				$elm$svg$Svg$Attributes$height(
 				$elm$core$String$fromInt(size)),
 				$elm$svg$Svg$Attributes$width(
@@ -6930,7 +7019,6 @@ var $rundis$elm_bootstrap$Bootstrap$Popover$isPopover = A2(
 		return A2($elm$core$String$contains, 'popover', _class) ? $elm$json$Json$Decode$succeed(true) : $elm$json$Json$Decode$succeed(false);
 	},
 	$rundis$elm_bootstrap$Bootstrap$Utilities$DomHelper$className);
-var $elm$json$Json$Decode$oneOf = _Json_oneOf;
 var $rundis$elm_bootstrap$Bootstrap$Popover$popper = F2(
 	function (path, decoder) {
 		return $elm$json$Json$Decode$oneOf(
@@ -7476,8 +7564,8 @@ var $author$project$Main$viewUploader = function (model) {
 				'border',
 				model.uploadHover ? '6px dashed purple' : '6px dashed #ccc'),
 				A2($elm$html$Html$Attributes$style, 'border-radius', '20px'),
-				A2($elm$html$Html$Attributes$style, 'width', '250px'),
-				A2($elm$html$Html$Attributes$style, 'height', '75px'),
+				A2($elm$html$Html$Attributes$style, 'width', '400px'),
+				A2($elm$html$Html$Attributes$style, 'height', '100px'),
 				A2($elm$html$Html$Attributes$style, 'padding', '20px'),
 				A2($elm$html$Html$Attributes$style, 'display', 'inline-block'),
 				A2($elm$html$Html$Attributes$style, 'align-items', 'center'),
@@ -7533,18 +7621,23 @@ var $author$project$Main$view = function (model) {
 							[
 								$elm$html$Html$text('Dragmap')
 							])),
+						$author$project$Main$viewUploader(model),
 						A2(
 						$rundis$elm_bootstrap$Bootstrap$Button$button,
 						_List_fromArray(
 							[
+								$rundis$elm_bootstrap$Bootstrap$Button$attrs(
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('download-button')
+									])),
 								$rundis$elm_bootstrap$Bootstrap$Button$onClick(
 								$author$project$Main$MapMsg($author$project$Dragmap$DownloadJson))
 							]),
 						_List_fromArray(
 							[
 								$elm$html$Html$text('Download Json')
-							])),
-						$author$project$Main$viewUploader(model)
+							]))
 					])),
 				A2(
 				$elm$html$Html$div,

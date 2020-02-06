@@ -22,7 +22,7 @@ type Image
 emptyHost : Int -> Html msg
 emptyHost size =
     svg
-        [ class "empty-host"
+        [ class "empty-host-drag"
         , height <| String.fromInt size
         , width <| String.fromInt size
         ]

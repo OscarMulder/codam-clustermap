@@ -70,11 +70,22 @@ type alias Model =
 -- INIT
 
 
-init : String -> Image -> MapSettings -> ( Model, Cmd Msg )
-init hostfile image mapsettings =
+init : String -> Image -> ( Model, Cmd Msg )
+init hostfile image =
+    let
+        hostmodel =
+            getHosts hostfile
+        mapset =
+            case hostmodel of
+                Nothing ->
+                    MapSettings 1325 1026 60 25
+                Just hmodel ->
+                    hmodel.mapSettings
+
+    in
     ( { mapImage = image
-      , mapSettings = mapsettings
-      , hostModel = getHosts hostfile
+      , mapSettings = mapset
+      , hostModel = hostmodel
       , drag = Draggable.init
       }
     , Cmd.none
@@ -106,8 +117,16 @@ update msg model =
 
                         Just hmodel ->
                             allHosts hmodel
+                
+                mapsettings =
+                    case model.hostModel of
+                        Nothing ->
+                            MapSettings 0 0 0 0
+
+                        Just hmodel ->
+                            hmodel.mapSettings
             in
-            ( model, downloadJson hostlist )
+            ( model, downloadJson hostlist mapsettings )
 
         PopoverMsg host state ->
             let
@@ -347,20 +366,44 @@ getHosts hostfile =
             Just hostmodel
 
         Err _ ->
-            Nothing
+            let
+                result2 =
+                    Decode.decodeString hostListDecoder hostfile
+            in
+            case result2 of
+                Ok hostlist ->
+                    let
+                        hostmodel =
+                            { mapSettings = MapSettings 1325 1026 60 25
+                            , hostList = hostlist
+                            , movingHost = Nothing
+                            }
+                    in
+                    Just hostmodel
 
+                Err _ ->
+                    Nothing
 
 hostModelDecoder : Decoder HostModel
 hostModelDecoder =
-    Field.require "mapsettings" mapSettingsDecoder <|
-        \mapsettings ->
+    Field.attempt "mapsettings" mapSettingsDecoder <|
+        \maybemapsettings ->
             Field.require "hosts" hostListDecoder <|
                 \hostlist ->
+                    let
+                        mapsettings =
+                            case maybemapsettings of
+                                Nothing -> 
+                                    MapSettings 1325 1026 60 25
+                                Just settings ->
+                                    settings
+                    in
                     Decode.succeed
                         { mapSettings = mapsettings
                         , hostList = hostlist
                         , movingHost = Nothing
                         }
+
 
 
 mapSettingsDecoder : Decoder MapSettings
@@ -390,25 +433,52 @@ hostDecoder : Decoder Host
 hostDecoder =
     Field.require "hostname" Decode.string <|
         \hostname ->
-            Field.require "left" Decode.int <|
-                \left ->
-                    Field.require "top" Decode.int <|
-                        \top ->
-                            Decode.succeed
-                                { id = hostname
-                                , position = ( left, top )
-                                , popState = Popover.initialState
-                                }
+            Field.attempt "left" Decode.int <|
+                \maybeleft ->
+                    Field.attempt "top" Decode.int <|
+                        \maybetop ->
+                            case ( maybeleft, maybetop ) of
+                                ( Just left, Just top) ->
+                                    Decode.succeed
+                                        { id = hostname
+                                        , position = ( left, top )
+                                        , popState = Popover.initialState
+                                        }
+                                _ ->
+                                    Decode.succeed
+                                        { id = hostname
+                                        , position = ( 50, 50 )
+                                        , popState = Popover.initialState
+                                        }
 
 
-downloadJson : List Host -> Cmd msg
-downloadJson hostlist =
-    Download.string "new-hostlist.json" "application/json" (hostlistToJson hostlist)
+downloadJson : List Host -> MapSettings -> Cmd msg
+downloadJson hostlist mapsettings =
+    Download.string "new-hostlist.json" "application/json" (hostmodelToJson hostlist mapsettings)
 
 
-hostlistToJson : List Host -> String
+hostmodelToJson : List Host -> MapSettings -> String
+hostmodelToJson hostlist mapsettings =
+    Encode.encode 2 <| 
+        Encode.object
+            [ ( "mapsettings", mapsettingsToJson mapsettings )
+            , ( "hosts" , hostlistToJson hostlist )
+            ]
+
+
+mapsettingsToJson : MapSettings -> Encode.Value
+mapsettingsToJson mapsettings =
+    Encode.object
+    [ ( "heigth", Encode.int mapsettings.height )
+    , ( "width", Encode.int mapsettings.width )
+    , ( "active-size", Encode.int mapsettings.activeIconSize )
+    , ( "empty-size", Encode.int mapsettings.emptyIconSize )
+    ]
+
+
+hostlistToJson : List Host -> Encode.Value
 hostlistToJson hostlist =
-    Encode.encode 2 (Encode.list hostConverter hostlist)
+    Encode.list hostConverter hostlist
 
 
 hostConverter : Host -> Encode.Value

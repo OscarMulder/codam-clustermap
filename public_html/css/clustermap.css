@@ -3,6 +3,7 @@
     --background-color: #121212;
     --foreground-color: #fafafa;
     --accent-color: #d644d1;
+    --drag-icon-color: #007bff;
     --active-color: rgba(48, 205, 49, 0.76);
     --popover-border: rgba(255, 255, 255, 0.2);
 }
@@ -74,6 +75,16 @@ body {
 .empty-host {
 	fill: var(--accent-color);
 	color: var(--accent-color);
+}
+
+.empty-host-drag {
+	fill: var(--drag-icon-color);
+    color: var(--drag-icon-color);
+    fill-opacity: 0.6;
+}
+
+.download-button {
+    color: var(--foreground-color) !important;
 }
 
 .popover {
