@@ -19,6 +19,8 @@ and running something like this.
 elm make src/Main.elm --output=../public_html/js/interactive_maps.js
 ```
 But it's easier to just use the Makefile commands.
+For the dragmap there is only a debug compile command, because it should only be
+used localy.
 
 ## Running localy
 You can run the projects localy by starting a webserver in the public_html
