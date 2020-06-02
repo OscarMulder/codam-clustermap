@@ -1,6 +1,8 @@
 # Codam Clustermap
 Map displaying who's active inside the clusters.
 
+![Clustermap Screenshot](https://codamhero.dev/screenshot.png)
+
 ## Elm
 The front-end is written in Elm. The elm code compiles to javascript. More info
 on elm: elm-lang.org
