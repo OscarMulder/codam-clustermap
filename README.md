@@ -5,7 +5,7 @@ Map displaying who's active inside the clusters.
 
 ## Elm
 The front-end is written in Elm. The elm code compiles to javascript. More info
-on elm: elm-lang.org
+on elm: https://elm-lang.org
 
 ### Installing Elm
 You can install Elm from the website: https://guide.elm-lang.org/install/elm.html
@@ -40,7 +40,7 @@ The dragmap is a tool which allows you to position the icons in the correct plac
 on the map. You can run it localy and it doesn't require any configuration.
 
 After starting the http server it should be available at 
-http://0.0.0.0:8000/interactive.html. The dragmap needs 2 uploads to work:
+http://0.0.0.0:8000/dragmap.html. The dragmap needs 2 uploads to work:
 - A svg map image
 - A list of hosts
 
