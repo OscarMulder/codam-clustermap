@@ -1,5 +1,5 @@
 # Codam Clustermap
-Map displaying who's active inside the clusters.
+Live display of who's active inside the Codam clusters.
 
 ![Clustermap Screenshot](https://codamhero.dev/screenshot.png)
 
@@ -42,14 +42,14 @@ on the map. You can run it localy and it doesn't require any configuration.
 After starting the http server it should be available at 
 http://0.0.0.0:8000/dragmap.html. The dragmap needs 2 uploads to work:
 - A svg map image
-- A list of hosts
+- A list of hosts (in json, seee below)
 
 You can upload these by simply dragging them on the upload button, just make sure
 to drag them separately and not together. If both files are valid it will display
-the map and the icons, and you can drag them in place. After dragging you can
-download a json file which you can use with the clustermap.
+the map and the icons, and you can drag them in place. After dragging all the icons
+in place you can download a json file which you can use with the clustermap.
 
-The hostfile can be in different formats:
+The json hostfile you upload can be in different formats:
 ```
 [
     {
